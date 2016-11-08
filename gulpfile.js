@@ -162,6 +162,13 @@ gulp.task('serve-examples', function() {
 	serve('examples');
 });
 
+gulp.task('terrain', function() {
+	//gulp.watch(glob.editorScripts, ['scripts-editor', reload]);
+	browserSync.watch('public/**/*.*').on('change', reload);
+	serve('public');
+});
+
+
 /*----------------------------------------------------------------------
 	HELPERS
 */
