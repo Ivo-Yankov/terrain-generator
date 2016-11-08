@@ -6,8 +6,6 @@ This is a simple random terrain generator that uses a hex based grid. Every obje
 
 Right now there are 2 types of bioms - mountain and flat island. There are rivers flowing from the mountains and the higher tiles are covered in snow. Trees are spawned on the grass and mountain tiles.
 
-![Generating Terrain](http://i.imgur.com/y1CJFKd.gif)
-
 # How to start it
 
 ```
