@@ -30,6 +30,7 @@
 
 	// Define global variables
 	min_snow_height = 150;
+	meshes_to_combine = [];
 
 	objectTypes = {
 		'grass' : {
@@ -93,7 +94,7 @@
 			tileScale: 0.95
 		});
 
-		scene.add(board.group);
+		// scene.add(board.group);
 		
 		addSkyBox();
 
@@ -127,6 +128,8 @@
 
 				// Adds snow to the higher mountains and grass to the lower mountains
 				generate_cover_tiles();
+
+				mergeGeometries();
 
 				window.rivers_generated = true;
 			}
@@ -438,6 +441,7 @@
 		});
 
 		var tile = new THREE.Mesh( geometry, material );
+
 		if( args.type) {
 			setTileColor( tile, args.type );
 		}
@@ -455,8 +459,10 @@
 
 		tile.rotation.x = -90 * vg.DEG_TO_RAD;
 		// tile.scale.set(0.95, 0.95, 1);
+		
+		meshes_to_combine.push(tile);
 
-		scene.add(tile);
+		// scene.add(tile);
 	}
 
 	function setHeight(cell, height) {
@@ -504,6 +510,113 @@
 		tile.material.color.r = objectTypes[type].r;
 		tile.material.color.g = objectTypes[type].g;
 		tile.material.color.b = objectTypes[type].b;
+		tile.userData.type = type;
+	}
+
+	// function mergeMeshes (meshes, materials) {
+	// 	var combined = new THREE.Geometry();
+	// 	for (var i = 0; i < meshes.length; i++) {
+	// 		meshes[i].updateMatrix();
+
+	// 		for (var j = 0; j < meshes[j].geometry.faces.length; j++) {
+	// 			meshes[j].geometry.faces[j].materialIndex = i;
+	// 			meshes[j].geometry.faces[j].color.setRGB( meshes[i].material.color.r, meshes[i].material.color.g, meshes[i].material.color.b );
+	// 		}
+
+ //  // // for ( var i = 0; i < geometry.faces.length; i ++ ) {
+ //  // //   geometry.faces[i].materialIndex = this.materials.length-1;
+ //  // // }
+
+	// 		combined.merge(meshes[i].geometry, meshes[i].matrix);
+	// 	}
+
+	// 	var mats = new THREE.MeshFaceMaterial(materials);
+
+	// 	var mesh = new THREE.Mesh(combined, mats);
+
+	// 	return mesh;
+	// }
+
+
+	function mergeMeshesAndMaterials (meshArr) {
+	    var geometry = new THREE.Geometry(),
+	        materials = [],
+	        m,
+	        materialPointer = 0,
+	        reindex = 0;
+
+	    for (var i = 0; i < meshArr.length; i++) {
+	        m = meshArr[i];
+
+	        if (m.material.materials) {
+	            for (var j = 0; j < m.material.materials.length; j++) {
+	                materials[materialPointer++] = m.material.materials[j];
+	            }
+	        } else if (m.material) {
+	            materials[materialPointer++] = m.material;
+	        }
+	        geometry.merge(m.geometry, m.matrix, reindex);
+	        
+	        reindex = materialPointer;
+	    }
+	    return new THREE.Mesh(geometry, new THREE.MeshFaceMaterial(materials));
+	};	
+
+	function mergeMeshes (meshArr) {
+	    var geometry = new THREE.Geometry();
+
+	    for (var i = 0; i < meshArr.length; i++) {
+	    	meshArr[i].updateMatrix();
+	        geometry.merge(meshArr[i].geometry, meshArr[i].matrix);
+	    }
+	    var material = meshArr[0].material;
+
+	    return new THREE.Mesh(geometry, material);
+	};	
+
+
+	function mergeGeometries() {
+		var geometry;
+		
+		var material_meshes = [];
+		for ( var object_type in objectTypes ) {
+			if ( objectTypes.hasOwnProperty(object_type) ) {
+				material_meshes[object_type] = [];
+			}
+		}
+
+		for ( cell_index in grid.cells ) {
+			if( grid.cells.hasOwnProperty(cell_index) ) {
+				var cell = grid.cells[cell_index]; 
+				cell.tile.mesh.userData.type = cell.tile.userData.type;
+				meshes_to_combine.push(cell.tile.mesh);
+			}
+		}
+		
+		for ( var mesh_index in meshes_to_combine ) {
+			if ( meshes_to_combine.hasOwnProperty(mesh_index) ) {
+				var mesh = meshes_to_combine[mesh_index];
+				if ( mesh.userData.type && material_meshes[mesh.userData.type] ) {
+					material_meshes[mesh.userData.type].push(mesh);
+				}
+			}
+		}
+
+		for ( var mesh_type in material_meshes ) {
+			if ( material_meshes.hasOwnProperty(mesh_type) ) {
+				if ( material_meshes[mesh_type].length ) {
+					var object = mergeMeshes( material_meshes[mesh_type] );
+					scene.add(object);
+				}
+			}
+		}
+
+		for ( cell_index in grid.cells ) {
+			if( grid.cells.hasOwnProperty(cell_index) ) {
+				var cell = grid.cells[cell_index]; 
+				cell.tile.dispose();
+			}
+		}
 	}
 	</script>
 </body>
