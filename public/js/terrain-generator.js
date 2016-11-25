@@ -5,6 +5,7 @@ TerrainGenerator = function(args) {
 	var meshes_to_combine = [];
 
 	var size = args.size || 40;
+
 	var tileScale = 0.95;
 
 	var terrain_is_generating = 0;
@@ -520,23 +521,26 @@ TerrainGenerator = function(args) {
 	function mergeMeshes (meshArr) {
 	    var geometry = new THREE.Geometry();
 
+	    var material = meshArr[0].material;
+
 	    for (var i = 0; i < meshArr.length; i++) {
 	    	meshArr[i].updateMatrix();
 	        geometry.merge(meshArr[i].geometry, meshArr[i].matrix);
 	    }
-	    var material = meshArr[0].material;
 
 	    return new THREE.Mesh(geometry, material);
 	};	
 
-
+	// TODO: find a way to optimize the merge process
 	function mergeGeometries() {
 		var geometry;
+
+		merge_buffer_size = 2000;
 		
 		var material_meshes = [];
 		for ( var object_type in objectTypes ) {
 			if ( objectTypes.hasOwnProperty(object_type) ) {
-				material_meshes[object_type] = [];
+				material_meshes[object_type] = [[]];
 			}
 		}
 
@@ -552,16 +556,27 @@ TerrainGenerator = function(args) {
 			if ( meshes_to_combine.hasOwnProperty(mesh_index) ) {
 				var mesh = meshes_to_combine[mesh_index];
 				if ( mesh.userData.type && material_meshes[mesh.userData.type] ) {
-					material_meshes[mesh.userData.type].push(mesh);
+					var buffer_index = material_meshes[mesh.userData.type].length - 1;
+					if ( material_meshes[mesh.userData.type][buffer_index].length == merge_buffer_size ) {
+						material_meshes[mesh.userData.type].push([]);
+					}
+
+					material_meshes[mesh.userData.type][buffer_index].push(mesh);
 				}
 			}
 		}
 
+
 		for ( var mesh_type in material_meshes ) {
 			if ( material_meshes.hasOwnProperty(mesh_type) ) {
-				if ( material_meshes[mesh_type].length ) {
-					var object = mergeMeshes( material_meshes[mesh_type] );
-					scene.add(object);
+				for ( var buffer_index = 0; buffer_index < material_meshes[mesh_type].length; buffer_index++ ) {
+					(function ( mesh_arr ){
+						requestAnimationFrame( function() {
+							var object = mergeMeshes( mesh_arr );
+							scene.add(object);
+							console.log('hop');
+						})
+					})( material_meshes[mesh_type][buffer_index] );
 				}
 			}
 		}
