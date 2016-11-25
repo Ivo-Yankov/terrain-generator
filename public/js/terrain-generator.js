@@ -4,6 +4,11 @@ TerrainGenerator = function(args) {
 	var min_snow_height = 150;
 	var meshes_to_combine = [];
 
+	// Create a random seed of none is provided
+	var seed = args.seed || getRandomSeed();
+	Math.seedrandom(seed);
+	console.log( 'Generating terrain with seed: ' + seed );
+
 	var size = args.size || 40;
 
 	var tileScale = 0.95;
@@ -12,6 +17,7 @@ TerrainGenerator = function(args) {
 	var rivers_are_generating = 0;
 	var trees_are_generating = 0;
 	var cover_tiles_are_generating = 0;
+	var merging = 0;
 
 	var objectTypes = {
 		'grass' : {
@@ -51,7 +57,7 @@ TerrainGenerator = function(args) {
 		}			
 	};
 
-	window.addEventListener('load', function(evt) {
+	function init() {
 
 		scene = new vg.Scene({
 			element: document.getElementById('view'),
@@ -81,7 +87,7 @@ TerrainGenerator = function(args) {
 		generate_terrain();
 		
 		update();
-	});
+	};
 
 	window.addEventListener('terrain_generated', function(evt) {
 		console.log('terrain_generated');
@@ -108,6 +114,18 @@ TerrainGenerator = function(args) {
 		// This greatly improves the performance
 		mergeGeometries();
 	});
+
+	window.addEventListener('merging_complete', function(evt) {
+		console.log('merging_complete');
+		
+		// Adds an object that is going to do stuff... I dont know what exactly yet
+		
+		for (var i = 0; i < 1; i++) {
+			addNPC();
+		}
+	});
+
+
 
 	function update() {
 		scene.render();
@@ -486,7 +504,6 @@ TerrainGenerator = function(args) {
 		}
 
 		cell.h = height;		
-		// cell.tile.dispose();
 
 		var tile = grid.generateTile(cell, settings.tileScale, settings.material);
 		tile.position.copy(grid.cellToPixel(cell));
@@ -528,6 +545,10 @@ TerrainGenerator = function(args) {
 	        geometry.merge(meshArr[i].geometry, meshArr[i].matrix);
 	    }
 
+	    if (--merging == 0) {
+	    	window.dispatchEvent(new CustomEvent('merging_complete'));
+	    }
+
 	    return new THREE.Mesh(geometry, material);
 	};	
 
@@ -566,15 +587,15 @@ TerrainGenerator = function(args) {
 			}
 		}
 
-
 		for ( var mesh_type in material_meshes ) {
 			if ( material_meshes.hasOwnProperty(mesh_type) ) {
 				for ( var buffer_index = 0; buffer_index < material_meshes[mesh_type].length; buffer_index++ ) {
+					merging++;
 					(function ( mesh_arr ){
 						requestAnimationFrame( function() {
 							var object = mergeMeshes( mesh_arr );
 							scene.add(object);
-							console.log('hop');
+							console.log('merging geometry');
 						})
 					})( material_meshes[mesh_type][buffer_index] );
 				}
@@ -582,11 +603,76 @@ TerrainGenerator = function(args) {
 		}
 
 		// Not sure if the tiles need to be deleted
-		for ( cell_index in grid.cells ) {
-			if( grid.cells.hasOwnProperty(cell_index) ) {
-				var cell = grid.cells[cell_index]; 
-				cell.tile.dispose();
+		// for ( cell_index in grid.cells ) {
+		// 	if( grid.cells.hasOwnProperty(cell_index) ) {
+		// 		var cell = grid.cells[cell_index]; 
+		// 		cell.tile.dispose();
+		// 	}
+		// }
+
+
+	}
+
+	function getRandomSeed() {
+		var seed = "";
+		var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+		for( var i=0; i < 20; i++ ) {
+			seed += possible.charAt(Math.floor(Math.random() * possible.length));
+		}
+
+		return seed;
+	}
+
+	function NPC() {
+		this.setPosition = function( cell ) {
+			this.mesh.position.x = cell.tile.position.x;
+			this.mesh.position.y = cell.tile.position.y + cell.h + 8;
+			this.mesh.position.z = cell.tile.position.z;
+
+			this.coordinates = {
+				q: cell.q,
+				r: cell.r,
+				s: cell.s,
 			}
 		}
+
+		this.move = function() {
+			var current_cell = grid.cells[this.coordinates.q + '.' + this.coordinates.r + '.' + this.coordinates.s];
+			var neighbors = grid.getNeighbors(current_cell);
+
+			var random_index = Math.floor(Math.random() * (neighbors.length) );
+			var random_neighbor = neighbors[ random_index ];
+
+			this.setPosition(random_neighbor);
+		}
+
+		var geometry = new THREE.SphereGeometry(8, 10, 10);  
+		var material = new THREE.MeshPhongMaterial({
+			color: '#cecece'
+		});
+
+		this.mesh = new THREE.Mesh(geometry, material);  
+		this.mesh.position.x = 100;
+		this.mesh.position.y = 100;
+
+		return this;
 	}
+
+	function addNPC() {
+		var npc = new NPC();
+		
+		npc.setPosition(grid.cells['0.0.0']);
+
+		setInterval( function(){
+			npc.move()
+		}, 200 );
+
+		scene.add(npc.mesh);  
+	}
+
+
+	init();
+
+	return this;
 }

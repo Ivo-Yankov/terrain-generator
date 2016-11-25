@@ -16,6 +16,11 @@
 			top: 0;
 			left: 0;
 		}
+
+		#controls {
+			position: absolute;
+			z-index: 10;
+		}
 	</style>
 </head>
 
@@ -26,11 +31,26 @@
 	<script type="text/javascript" src="../lib/three.min.js"></script>
 	<script type="text/javascript" src="../lib/OrbitControls.js"></script>
 	<script type="text/javascript" src="../dist/hex-grid.min.js"></script>
+	<script type="text/javascript" src="js/seedrandom.js"></script>
 	<script type="text/javascript" src="js/terrain-generator.js"></script>
 	<script type="text/javascript">
-		TerrainGenerator({
-			size: 60
-		});
+
+		function generate_map() {
+			generator = new TerrainGenerator({
+				size: 60,
+				seed: document.getElementById('seed').value
+			});
+
+			document.getElementById('seed').remove();
+			document.getElementById('generate_map').remove();
+		}
+
 	</script>
+
+	<div id="controls">
+		<!-- <button id="save_map">Save</button> -->
+		
+		<input id="seed" placeholder="Enter SEED here"/> <button id="generate_map" onClick="generate_map()" >Generate</button>
+	</div>
 </body>
 </html>
