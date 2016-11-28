@@ -18,6 +18,7 @@ TerrainGenerator = function(args) {
 	var trees_are_generating = 0;
 	var cover_tiles_are_generating = 0;
 	var merging = 0;
+	merged_group = new THREE.Object3D();
 
 	var objectTypes = {
 		'grass' : {
@@ -74,7 +75,15 @@ TerrainGenerator = function(args) {
 			size: size
 		});
 
-		board = new vg.Board(grid);
+		board = new vg.Board(grid, {
+			heuristicFilter: function(origin, next) {
+				return true;
+				if (next.h - origin.h > 10) {
+					return false; // no, filter out next
+				}
+				return true; // yes, keep next for consideration
+			}
+		});
 
 		board.generateTilemap({
 			tileScale: tileScale
@@ -117,18 +126,12 @@ TerrainGenerator = function(args) {
 
 	window.addEventListener('merging_complete', function(evt) {
 		console.log('merging_complete');
-		
-		// Adds an object that is going to do stuff... I dont know what exactly yet
-		
-		for (var i = 0; i < 1; i++) {
-			addNPC();
-		}
+		scene.add( merged_group );
 	});
-
-
 
 	function update() {
 		scene.render();
+
 		requestAnimationFrame(update);
 	}	
 
@@ -363,6 +366,7 @@ TerrainGenerator = function(args) {
 			if ( rand > tree_chance ) {
 				var y_pos = cell.h;
 				var height = Math.floor( Math.random() * 5 + 10 );
+				cell.userData.has_tree = true;
 
 				createNewTile ({
 					'position': {
@@ -545,10 +549,6 @@ TerrainGenerator = function(args) {
 	        geometry.merge(meshArr[i].geometry, meshArr[i].matrix);
 	    }
 
-	    if (--merging == 0) {
-	    	window.dispatchEvent(new CustomEvent('merging_complete'));
-	    }
-
 	    return new THREE.Mesh(geometry, material);
 	};	
 
@@ -594,8 +594,12 @@ TerrainGenerator = function(args) {
 					(function ( mesh_arr ){
 						requestAnimationFrame( function() {
 							var object = mergeMeshes( mesh_arr );
-							scene.add(object);
+							merged_group.add( object );
 							console.log('merging geometry');
+							
+							if (--merging == 0) {
+								window.dispatchEvent(new CustomEvent('merging_complete'));
+							}
 						})
 					})( material_meshes[mesh_type][buffer_index] );
 				}
@@ -623,54 +627,6 @@ TerrainGenerator = function(args) {
 
 		return seed;
 	}
-
-	function NPC() {
-		this.setPosition = function( cell ) {
-			this.mesh.position.x = cell.tile.position.x;
-			this.mesh.position.y = cell.tile.position.y + cell.h + 8;
-			this.mesh.position.z = cell.tile.position.z;
-
-			this.coordinates = {
-				q: cell.q,
-				r: cell.r,
-				s: cell.s,
-			}
-		}
-
-		this.move = function() {
-			var current_cell = grid.cells[this.coordinates.q + '.' + this.coordinates.r + '.' + this.coordinates.s];
-			var neighbors = grid.getNeighbors(current_cell);
-
-			var random_index = Math.floor(Math.random() * (neighbors.length) );
-			var random_neighbor = neighbors[ random_index ];
-
-			this.setPosition(random_neighbor);
-		}
-
-		var geometry = new THREE.SphereGeometry(8, 10, 10);  
-		var material = new THREE.MeshPhongMaterial({
-			color: '#cecece'
-		});
-
-		this.mesh = new THREE.Mesh(geometry, material);  
-		this.mesh.position.x = 100;
-		this.mesh.position.y = 100;
-
-		return this;
-	}
-
-	function addNPC() {
-		var npc = new NPC();
-		
-		npc.setPosition(grid.cells['0.0.0']);
-
-		setInterval( function(){
-			npc.move()
-		}, 200 );
-
-		scene.add(npc.mesh);  
-	}
-
 
 	init();
 

@@ -64,10 +64,13 @@ vg.MouseCaster.prototype = {
 		var intersects = this._raycaster.intersectObject(this.group, true);
 		var hit, obj;
 
+		console.log(intersects);
 		if (intersects.length > 0) {
+			console.log('intersects');
 			// get the first object under the mouse
 			hit = intersects[0];
 			obj = hit.object.userData.structure;
+			console.log(obj);
 			if (this.pickedObject != obj) {
 				// the first object changed, meaning there's a different one, or none at all
 				if (this.pickedObject) {
