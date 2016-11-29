@@ -23,7 +23,7 @@ vg.AStarFinder.prototype = {
 		Find and return the path.
 		@return Array<Cell> The path, including both start and end positions. Null if it failed.
 	 */
-	findPath: function(startNode, endNode, heuristic, grid) {
+	findPath: function(startNode, endNode, heuristic, grid, maxDistance) {
 		var current, costSoFar, neighbors, n, i, l;
 		heuristic = heuristic || this.heuristicFilter;
 		// clear old values from previous finding
@@ -67,6 +67,10 @@ vg.AStarFinder.prototype = {
 					// _priority is the most important property, since it makes the algorithm "greedy" and seek the goal.
 					// otherwise it behaves like a brushfire/breadth-first
 					n._priority = costSoFar + grid.distance(endNode, n);
+
+					if (n._priority > maxDistance) {
+						continue;
+					}
 
 					// check neighbor if it's the end current as well--often cuts steps by a significant amount
 					if (n === endNode) {

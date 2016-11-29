@@ -148,7 +148,7 @@ vg.HexGrid.prototype = {
 
 	distance: function(cellA, cellB) {
 		var d = Math.max(Math.abs(cellA.q - cellB.q), Math.abs(cellA.r - cellB.r), Math.abs(cellA.s - cellB.s));
-		d += cellB.h - cellA.h; // include vertical height
+		// d += cellB.h - cellA.h; // include vertical height
 		return d;
 	},
 

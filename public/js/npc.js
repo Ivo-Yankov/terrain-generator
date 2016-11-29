@@ -38,6 +38,7 @@ window.addEventListener('click', function(evt) {
 function NPC ( args ) {
 
 	this.moving_interval = 0;
+	this.path =[];
 
 	this.setPosition = function( cell ) {
 		this.mesh.position.x = cell.tile.position.x;
@@ -53,14 +54,26 @@ function NPC ( args ) {
 
 	this.move = function( target_cell ) {
 		// var current_cell = grid.cells[this.coordinates.q + '.' + this.coordinates.r + '.' + this.coordinates.s];
+		unhighlight_cell(target_cell);
 		this.setPosition(target_cell);
 	}
 
 	this.createPath = function( destination ) {
 		var current_cell = grid.cells[this.coordinates.q + '.' + this.coordinates.r + '.' + this.coordinates.s];
-		
-		var path = board.findPath(current_cell.tile, destination.tile);
+		if (this.path.length) {
+			for( var i = 0; i < this.path.length; i++ ) {
+				unhighlight_cell( this.path[i] );
+			}
+		}
+
+
+		var path = board.findPath(current_cell.tile, destination.tile, null, 10);
 		if (path) {
+			this.path = path;
+			for( var i = 0; i < path.length; i++ ) {
+				highlight_cell( path[i] );
+			}
+
 			path.reverse();
 			( function( path ){			
 				window.player.moving_interval = setInterval( function() {
@@ -99,7 +112,7 @@ function addNPC() {
 }
 
 moving_restrictions = {
-	move_on_water: false,
+	move_on_water: true,
 	move_on_grass: true,
 	move_on_mountain: true,
 	move_on_mud: true,
@@ -108,10 +121,8 @@ moving_restrictions = {
 	move_to_tree: false
 }
 
-move_is_legal = function( current_cell, target_cell ) {
-
+function move_is_legal( current_cell, target_cell ) {
 	var legal = false;
-
 	switch ( target_cell.userData.type ) {
 		case 'water':
 			legal = moving_restrictions.move_on_water;
@@ -140,4 +151,23 @@ move_is_legal = function( current_cell, target_cell ) {
 	}
 
 	return legal;
+}
+
+function highlight_cell( cell ) {
+	var geometry = new THREE.CylinderGeometry( 5, 5, 5, 32 );
+	var material = new THREE.MeshBasicMaterial( {color: 0xe6d240, opacity: 0.5 } );
+	var highlight = new THREE.Mesh( geometry, material );
+	highlight.position.x = cell.tile.position.x;
+	highlight.position.z = cell.tile.position.z;
+	highlight.position.y = cell.tile.position.y + cell.h;
+	cell.userData.highlight = highlight;
+	scene.add(highlight);
+}
+
+function unhighlight_cell( cell ) {
+	highlight = cell.userData.highlight;
+	if ( highlight ) {
+		scene.remove(highlight);
+		delete cell.userData.highlight;
+	}
 }

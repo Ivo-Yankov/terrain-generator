@@ -95,8 +95,8 @@ vg.Board.prototype = {
 		return this.tiles[i];
 	},
 
-	findPath: function(startTile, endTile, heuristic) {
-		return this.finder.findPath(startTile.cell, endTile.cell, heuristic, this.grid);
+	findPath: function(startTile, endTile, heuristic, maxDistance) {
+		return this.finder.findPath(startTile.cell, endTile.cell, heuristic, this.grid, maxDistance);
 	},
 
 	setGrid: function(newGrid) {
