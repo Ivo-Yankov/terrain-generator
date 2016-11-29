@@ -539,19 +539,6 @@ TerrainGenerator = function(args) {
 		tile.userData.type = type;
 	}
 
-	function mergeMeshes (meshArr) {
-	    var geometry = new THREE.Geometry();
-
-	    var material = meshArr[0].material;
-
-	    for (var i = 0; i < meshArr.length; i++) {
-	    	meshArr[i].updateMatrix();
-	        geometry.merge(meshArr[i].geometry, meshArr[i].matrix);
-	    }
-
-	    return new THREE.Mesh(geometry, material);
-	};	
-
 	// TODO: find a way to optimize the merge process
 	function mergeGeometries() {
 		var geometry;
@@ -632,3 +619,16 @@ TerrainGenerator = function(args) {
 
 	return this;
 }
+
+function mergeMeshes (meshArr) {
+    var geometry = new THREE.Geometry();
+
+    var material = meshArr[0].material;
+
+    for (var i = 0; i < meshArr.length; i++) {
+    	meshArr[i].updateMatrix();
+        geometry.merge(meshArr[i].geometry, meshArr[i].matrix);
+    }
+
+    return new THREE.Mesh(geometry, material);
+};	
