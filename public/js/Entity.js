@@ -1,10 +1,12 @@
 window.addEventListener('merging_complete', function(evt) {
-	
 	// Adds an object that is going to do stuff... I dont know what exactly yet
 	for (var i = 0; i < 1; i++) {
-		addEntity();
+		addPlayer();
 	}
 
+	spawnResources('A', 1, {
+
+	});
 });
 	
 window.addEventListener('click', function(evt) {
@@ -35,41 +37,50 @@ window.addEventListener('click', function(evt) {
 	}
 });
 
-function Entity( args ) {
-
-	this.moving_interval = 0;
-	this.path = [];
-	this.possible_moves = [];
-	this.possible_moves_meshes = [];
-	this.drawing_possible_moves = 0;
-
-	this.geometry = new THREE.SphereGeometry(8, 10, 10);  
-	this.material = new THREE.MeshPhongMaterial({
-		color: '#191919'
-	});
-
-	this.mesh = new THREE.Mesh(this.geometry, this.material);  
-
-	this.setPosition(args.cell);
-	
-	if ( args.moving_restrictions ) {
-		this.moving_restrictions = vg.Tools.merge( this.moving_restrictions, args.moving_restrictions );
-	}
-
-	this.find_possible_moves(this.get_current_cell(), 10);
-
-
-	scene.add(this.mesh);
-
-	return this;
-}
-
-function addEntity() {
+function addPlayer() {
 	var entity = new Entity({
-		cell: grid.cells['0.0.0']
+		cell: grid.cells['0.0.0'],
+		controllable: true
 	});
 
 	window.player = entity;
+}
+
+function spawnResources(type, chance, spawn_restrictions) {
+	
+	grid.traverse(function(cell) {
+		var roll = Math.random() * 100;
+		// if ( spawn_restrictions )
+		if ( roll <= chance ) {
+			console.log(roll);
+			new Entity( {
+				color: '#ffffff',
+				cell: cell,
+				controllable: false
+			} )
+		}
+	})
+}
+
+function Entity( args ) {
+
+	this.geometry = new THREE.SphereGeometry(8, 10, 10);
+	this.material = new THREE.MeshPhongMaterial({
+		color: args.color || '#191919'
+	});
+
+	this.mesh = new THREE.Mesh(this.geometry, this.material);
+	this.setPosition(args.cell);
+
+	if ( args.controllable ) {
+		if ( args.moving_restrictions ) {
+			this.moving_restrictions = vg.Tools.merge( this.moving_restrictions, args.moving_restrictions );
+		}
+		this.find_possible_moves(this.get_current_cell(), 10);
+	}
+
+	scene.add(this.mesh);
+	return this;
 }
 
 Entity.prototype = {
@@ -83,13 +94,13 @@ Entity.prototype = {
 	mesh: null,
 	
 	moving_restrictions: {
-		move_on_water: false,
-		move_on_grass: true,
-		move_on_mountain: true,
-		move_on_mud: true,
+		water: false,
+		grass: true,
+		mountain: true,
+		mud: true,
 		to_higher: 20,
 		to_lower: 20,
-		move_to_tree: false
+		tree: false
 	},
 
 	setPosition: function( cell ) {
@@ -218,21 +229,21 @@ Entity.prototype = {
 
 		switch ( target_cell.userData.type ) {
 			case 'water':
-				legal = moving_restrictions.move_on_water;
+				legal = moving_restrictions.water;
 				break;
 			case 'grass':
-				legal = moving_restrictions.move_on_grass;
+				legal = moving_restrictions.grass;
 				break;
 			case 'mountain':
-				legal = moving_restrictions.move_on_mountain;
+				legal = moving_restrictions.mountain;
 				break;
 			case 'mud':
-				legal = moving_restrictions.move_on_mud;
+				legal = moving_restrictions.mud;
 				break;
 		}
 
-		var cant_move_to_tree = target_cell.userData.has_tree && !moving_restrictions.move_to_tree;
-		if ( !legal || cant_move_to_tree ) {
+		var cant_tree = target_cell.userData.has_tree && !moving_restrictions.tree;
+		if ( !legal || cant_tree ) {
 			return false;
 		}
 
