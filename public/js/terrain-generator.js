@@ -604,31 +604,7 @@ TerrainGenerator = function(args) {
 
 	}
 
-	function getRandomSeed() {
-		var seed = "";
-		var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-		for( var i=0; i < 20; i++ ) {
-			seed += possible.charAt(Math.floor(Math.random() * possible.length));
-		}
-
-		return seed;
-	}
-
 	init();
 
 	return this;
 }
-
-function mergeMeshes (meshArr) {
-    var geometry = new THREE.Geometry();
-
-    var material = meshArr[0].material;
-
-    for (var i = 0; i < meshArr.length; i++) {
-    	meshArr[i].updateMatrix();
-        geometry.merge(meshArr[i].geometry, meshArr[i].matrix);
-    }
-
-    return new THREE.Mesh(geometry, material);
-};	
