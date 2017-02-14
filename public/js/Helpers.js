@@ -59,3 +59,33 @@ function getRandomSeed() {
 
 	return seed;
 }
+
+// Downloads a json with the whole grid data
+function getJSON() {
+	var data = [];
+
+	for(var cell_index in board.grid.cells) {
+		var cell = board.grid.cells[cell_index];
+		ob = {
+			q: cell.q,
+			r: cell.r,
+			s: cell.s,
+			h: cell.h,
+			type: cell.userData.type
+		}
+
+		if (cell.userData.features) {
+			ob.features = cell.userData.features;
+		}
+
+		data.push(ob);
+	}
+
+	var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
+	$('#downloadAnchorElem').remove();
+	$(document).appent($('<a id="downloadAnchorElem" style="display:none"></a>'));
+	var dlAnchorElem = document.getElementById('downloadAnchorElem');
+	dlAnchorElem.setAttribute("href",     dataStr     );
+	dlAnchorElem.setAttribute("download", "scene.json");
+	dlAnchorElem.click();
+}

@@ -60,6 +60,37 @@ TerrainGenerator = function(args) {
 
 	function init() {
 
+		window.addEventListener('terrain_generated', function(evt) {
+			console.log('terrain_generated');
+			// Starts the generation of the rivers after the terrain is completed
+			generate_river_flow();
+		});
+
+		window.addEventListener('rivers_generated', function(evt) {
+			console.log('rivers_generated');
+			// Creates trees on grass and mountain tiles
+			batch_generate( generate_tree, 'trees' );
+
+		});
+
+		window.addEventListener('trees_generated', function(evt) {
+			console.log('trees_generated');
+			// Adds snow to the higher mountains and grass to the lower mountains
+			batch_generate( generate_cover_tile, 'covers' )
+		});
+
+		window.addEventListener('generation_complete', function(evt) {
+			console.log('generation_complete');
+			// Merges all geometries with the same materials into single objects
+			// This greatly improves the performance
+			mergeGeometries();
+		});
+
+		window.addEventListener('merging_complete', function(evt) {
+			console.log('merging_complete');
+			scene.add( merged_group );
+		});
+
 		scene = new vg.Scene({
 			element: document.getElementById('view'),
 			cameraPosition: {x:1380, y:710, z:1327}
@@ -88,8 +119,6 @@ TerrainGenerator = function(args) {
 		board.generateTilemap({
 			tileScale: tileScale
 		});
-
-		// scene.add(board.group);
 		
 		addSkyBox();
 
@@ -98,40 +127,8 @@ TerrainGenerator = function(args) {
 		update();
 	};
 
-	window.addEventListener('terrain_generated', function(evt) {
-		console.log('terrain_generated');
-		// Starts the generation of the rivers after the terrain is completed
-		generate_river_flow();
-	});
-
-	window.addEventListener('rivers_generated', function(evt) {
-		console.log('rivers_generated');
-		// Creates trees on grass and mountain tiles
-		batch_generate( generate_tree, 'trees' );
-
-	});
-
-	window.addEventListener('trees_generated', function(evt) {
-		console.log('trees_generated');
-		// Adds snow to the higher mountains and grass to the lower mountains
-		batch_generate( generate_cover_tile, 'covers' )
-	});
-
-	window.addEventListener('generation_complete', function(evt) {
-		console.log('generation_complete');
-		// Merges all geometries with the same materials into single objects
-		// This greatly improves the performance
-		mergeGeometries();
-	});
-
-	window.addEventListener('merging_complete', function(evt) {
-		console.log('merging_complete');
-		scene.add( merged_group );
-	});
-
 	function update() {
 		scene.render();
-
 		requestAnimationFrame(update);
 	}	
 
@@ -287,6 +284,7 @@ TerrainGenerator = function(args) {
 						'y' : 1,
 						'z' : 1
 					}, 'snow');
+				add_feature(cell, 'snow');
 			}
 			else if ( cell.h < 50 ) {
 				create_cover_tile( {
@@ -298,6 +296,7 @@ TerrainGenerator = function(args) {
 					'y' : 1,
 					'z' : 1
 				}, 'grass');
+				add_feature(cell, 'grass');
 			}
 		}
 
@@ -356,6 +355,14 @@ TerrainGenerator = function(args) {
 		}
 	}
 
+	function add_feature(cell, feature) {
+		if (!cell.userData.features) {
+			cell.userData.features = {};
+		}
+
+		cell.userData.features[feature] = true;
+	}
+
 	function generate_tree( cell_index ) {
 		var cell = grid.cells[cell_index];
 		if ( cell.userData.type == 'grass' || cell.userData.type == 'mountain' ) {
@@ -366,7 +373,7 @@ TerrainGenerator = function(args) {
 			if ( rand > tree_chance ) {
 				var y_pos = cell.h;
 				var height = Math.floor( Math.random() * 5 + 10 );
-				cell.userData.has_tree = true;
+				add_feature(cell, 'tree');
 
 				createNewTile ({
 					'position': {
@@ -600,7 +607,6 @@ TerrainGenerator = function(args) {
 		// 		cell.tile.dispose();
 		// 	}
 		// }
-
 
 	}
 
