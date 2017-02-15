@@ -1,7 +1,10 @@
 {
   "name": "hex-grid",
   "description": "Hexagonal (and other) grid stuff with three.js",
-  "repository": "https://github.com/vonWolfehaus/hex-grid",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vonWolfehaus/hex-grid.git"
+  },
   "license": "MIT",
   "devDependencies": {
     "browser-sync": "^2.2.3",
@@ -26,5 +29,18 @@
     "gulp-wrap": "^0.11.0",
     "run-sequence": "^1.0.2"
   },
-  "dependencies": {}
+  "dependencies": {
+    "express": "^4.14.1",
+    "seedrandom": "^2.4.2"
+  },
+  "bugs": {
+    "url": "https://github.com/vonWolfehaus/hex-grid/issues"
+  },
+  "homepage": "https://github.com/vonWolfehaus/hex-grid#readme",
+  "version": "1.0.0",
+  "main": "gulpfile.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": ""
 }

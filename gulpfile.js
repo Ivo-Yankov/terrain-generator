@@ -10,8 +10,8 @@ var path = require('path');
 var pkg = require('./package.json');
 //var preprocessOpts = {context: { NODE_ENV: process.env.NODE_ENV || 'development', DEBUG: true}};
 
-var dist = 'dist';
-var src = 'src';
+var dist = 'public/dist';
+var src = 'public/src';
 
 var glob = {
 	scripts: [src+'/vg.js', src+'/**/*.js'],
