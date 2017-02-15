@@ -76,7 +76,7 @@ TerrainGenerator = function(args) {
 		window.addEventListener('trees_generated', function(evt) {
 			console.log('trees_generated');
 			// Adds snow to the higher mountains and grass to the lower mountains
-			batch_generate( generate_cover_tile, 'covers' )
+			batch_generate( generate_cover_tile, 'covers' );
 		});
 
 		window.addEventListener('generation_complete', function(evt) {
@@ -122,7 +122,9 @@ TerrainGenerator = function(args) {
 		
 		addSkyBox();
 
-		generate_terrain();
+		// generate_terrain();
+
+		load_terrain();
 		
 		update();
 	};
@@ -130,7 +132,75 @@ TerrainGenerator = function(args) {
 	function update() {
 		scene.render();
 		requestAnimationFrame(update);
-	}	
+	}
+
+	function load_terrain(){
+
+		var xmlhttp = new XMLHttpRequest();
+
+		xmlhttp.onreadystatechange = function() {
+			if (xmlhttp.readyState == XMLHttpRequest.DONE ) {
+				if (xmlhttp.status == 200) {
+					data = JSON.parse(xmlhttp.responseText);
+					console.log(data); 
+					render_terrain(data);
+				}
+				else {
+					console.log("error: status", xmlhttp.status);
+					console.log(xmlhttp.responseText);
+				}
+			}
+		};
+
+		xmlhttp.open("GET", "sample-terrain.json", true);
+		xmlhttp.send();
+	}
+
+	function render_terrain(data) {
+		for (var i in data ) {
+			if( data.hasOwnProperty(i) ) {
+				var cell = getCell(data[i].q, data[i].r, data[i].s);
+
+				setHeight(cell, data[i].h);
+
+				setObjectType(cell, data[i].type);
+
+				setFeatures(cell, data[i].features);
+			}
+		}
+
+		mergeGeometries();
+	}
+
+	function getCell(q, r, s) {
+		return board.grid.cells[ q + '.' + r + '.' + s ];
+	}
+
+	function setFeatures(cell, features) {
+		for (var feature in features) {
+			if ( features.hasOwnProperty(feature) ) {
+				if ( features[feature] ) {
+					createFeatureGeometry( cell, feature, features[feature] );
+				}
+			}
+		}
+	}
+
+	function createFeatureGeometry( cell, feature, args ) {
+		switch (feature) {
+			case 'tree':
+				createTreeGeometry(cell, args);
+				break;
+
+			case 'grass':
+				createGrassGeometry(cell, args);
+				break;
+
+			case 'snow':
+				createSnowGeometry(cell, args);
+				break;
+		}
+	}
 
 	function generate_terrain() {
 		// Set all cells to water
@@ -275,27 +345,11 @@ TerrainGenerator = function(args) {
 		if ( cell.userData.type == 'mountain' ) {
 
 			if ( cell.h > min_snow_height ) {
-				create_cover_tile({
-						'x' : cell.tile.position.x,
-						'y' : cell.h,
-						'z' : cell.tile.position.z
-					}, {
-						'x' : 1,
-						'y' : 1,
-						'z' : 1
-					}, 'snow');
+				createSnowGeometry(cell);
 				add_feature(cell, 'snow');
 			}
 			else if ( cell.h < 50 ) {
-				create_cover_tile( {
-					'x' : cell.tile.position.x,
-					'y' : cell.h,
-					'z' : cell.tile.position.z
-				}, {
-					'x' : 1,
-					'y' : 1,
-					'z' : 1
-				}, 'grass');
+				createGrassGeometry(cell);
 				add_feature(cell, 'grass');
 			}
 		}
@@ -363,6 +417,112 @@ TerrainGenerator = function(args) {
 		cell.userData.features[feature] = true;
 	}
 
+
+	function createGrassGeometry(cell, args) {
+		create_cover_tile( {
+			'x' : cell.tile.position.x,
+			'y' : cell.h,
+			'z' : cell.tile.position.z
+		}, {
+			'x' : 1,
+			'y' : 1,
+			'z' : 1
+		}, 'grass');
+	}
+
+	function createSnowGeometry(cell, args) {
+		create_cover_tile( {
+			'x' : cell.tile.position.x,
+			'y' : cell.h,
+			'z' : cell.tile.position.z
+		}, {
+			'x' : 1,
+			'y' : 1,
+			'z' : 1
+		}, 'snow');
+	}
+
+	function createTreeGeometry(cell, args) {
+		var y_pos = cell.h;
+
+		var height_1 = args.height_1 || Math.floor( Math.random() * 5 + 10 );
+		var height_2 = args.height_2 || Math.floor( Math.random() * 5 + 10 );
+		var height_3 = args.height_3 || Math.floor( Math.random() * 5 + 10 );
+
+		createNewTile ({
+			'position': {
+				'x': cell.tile.position.x,
+				'y': y_pos,
+				'z': cell.tile.position.z
+			},
+			'scale': {
+				'x': 0.2,
+				'y': 0.2,
+				'z': 1
+			},
+			'height' : height_1,
+			'type' : 'tree-trunk'
+		});
+
+		y_pos += height_1;
+		
+		createNewTile ({
+			'position': {
+				'x': cell.tile.position.x,
+				'y': y_pos,
+				'z': cell.tile.position.z
+			},
+			'scale': {
+				'x': 1,
+				'y': 1,
+				'z': 1
+			},
+			'height' : height_2,
+			'type' : 'leaves'
+		});
+
+		if ( y_pos > min_snow_height ) {
+			create_cover_tile({
+				'x' : cell.tile.position.x,
+				'y' : y_pos + height_2,
+				'z' : cell.tile.position.z
+			}, {
+				'x' : 1,
+				'y' : 1,
+				'z' : 1
+			}, 'snow');
+		}
+
+		y_pos += height_2;
+		
+		createNewTile ({
+			'position': {
+				'x': cell.tile.position.x,
+				'y': y_pos,
+				'z': cell.tile.position.z
+			},
+			'scale': {
+				'x': 0.5,
+				'y': 0.5,
+				'z': 1
+			},
+			'height' : height_3,
+			'type' : 'leaves'
+		});
+
+		if ( y_pos > min_snow_height ) {
+			create_cover_tile({
+				'x' : cell.tile.position.x,
+				'y' : y_pos + height_3,
+				'z' : cell.tile.position.z
+			}, {
+				'x': 0.5,
+				'y': 0.5,
+				'z' : 1
+			}, 'snow');
+		}
+	}
+
 	function generate_tree( cell_index ) {
 		var cell = grid.cells[cell_index];
 		if ( cell.userData.type == 'grass' || cell.userData.type == 'mountain' ) {
@@ -371,84 +531,8 @@ TerrainGenerator = function(args) {
 			var tree_chance = cell.userData.type == 'grass' ? 80 : 95;
 
 			if ( rand > tree_chance ) {
-				var y_pos = cell.h;
-				var height = Math.floor( Math.random() * 5 + 10 );
 				add_feature(cell, 'tree');
-
-				createNewTile ({
-					'position': {
-						'x': cell.tile.position.x,
-						'y': y_pos,
-						'z': cell.tile.position.z
-					},
-					'scale': {
-						'x': 0.2,
-						'y': 0.2,
-						'z': 1
-					},
-					'height' : height,
-					'type' : 'tree-trunk'
-				});
-
-				y_pos += height;
-				var height = Math.floor( Math.random() * 5 + 10 );
-
-				createNewTile ({
-					'position': {
-						'x': cell.tile.position.x,
-						'y': y_pos,
-						'z': cell.tile.position.z
-					},
-					'scale': {
-						'x': 1,
-						'y': 1,
-						'z': 1
-					},
-					'height' : height,
-					'type' : 'leaves'
-				});
-
-				if ( y_pos > min_snow_height ) {
-					create_cover_tile({
-						'x' : cell.tile.position.x,
-						'y' : y_pos + height,
-						'z' : cell.tile.position.z
-					}, {
-						'x' : 1,
-						'y' : 1,
-						'z' : 1
-					}, 'snow');
-				}
-
-				y_pos += height;
-				var height = Math.floor( Math.random() * 5 + 10 );
-
-				createNewTile ({
-					'position': {
-						'x': cell.tile.position.x,
-						'y': y_pos,
-						'z': cell.tile.position.z
-					},
-					'scale': {
-						'x': 0.5,
-						'y': 0.5,
-						'z': 1
-					},
-					'height' : height,
-					'type' : 'leaves'
-				});
-
-				if ( y_pos > min_snow_height ) {
-					create_cover_tile({
-						'x' : cell.tile.position.x,
-						'y' : y_pos + height,
-						'z' : cell.tile.position.z
-					}, {
-						'x': 0.5,
-						'y': 0.5,
-						'z' : 1
-					}, 'snow');
-				}
+				createTreeGeometry(cell);
 			}
 		}
 
@@ -584,18 +668,20 @@ TerrainGenerator = function(args) {
 		for ( var mesh_type in material_meshes ) {
 			if ( material_meshes.hasOwnProperty(mesh_type) ) {
 				for ( var buffer_index = 0; buffer_index < material_meshes[mesh_type].length; buffer_index++ ) {
-					merging++;
-					(function ( mesh_arr ){
-						requestAnimationFrame( function() {
-							var object = mergeMeshes( mesh_arr );
-							merged_group.add( object );
-							console.log('merging geometry');
-							
-							if (--merging == 0) {
-								window.dispatchEvent(new CustomEvent('merging_complete'));
-							}
-						})
-					})( material_meshes[mesh_type][buffer_index] );
+					if ( material_meshes[mesh_type][buffer_index] && material_meshes[mesh_type][buffer_index].length ) {
+						merging++;
+						(function ( mesh_arr ){
+							requestAnimationFrame( function() {
+								var object = mergeMeshes( mesh_arr );
+								merged_group.add( object );
+								console.log('merging geometry');
+								
+								if (--merging == 0) {
+									window.dispatchEvent(new CustomEvent('merging_complete'));
+								}
+							})
+						})( material_meshes[mesh_type][buffer_index] );
+					}
 				}
 			}
 		}

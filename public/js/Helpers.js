@@ -89,3 +89,17 @@ function getJSON() {
 	dlAnchorElem.setAttribute("download", "scene.json");
 	dlAnchorElem.click();
 }
+
+function generate_map() {
+	generator = new TerrainGenerator({
+		size: 60,
+		seed: document.getElementById('seed').value
+	});
+
+	document.getElementById('seed').remove();
+	document.getElementById('generate_map').remove();
+}
+
+// TODO: find why there is a error in these seeds:
+// 7wWq8RLlFnQYGVK3ULuw
+// LmR39CWSVRkNndjenDCx

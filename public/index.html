@@ -36,22 +36,6 @@
 	<script type="text/javascript" src="js/seedrandom.js"></script>
 	<script type="text/javascript" src="js/terrain-generator.js"></script>
 	<!--<script type="text/javascript" src="js/Entity.js"></script>-->
-	<script type="text/javascript">
-
-		function generate_map() {
-			generator = new TerrainGenerator({
-				size: 60,
-				seed: document.getElementById('seed').value
-			});
-
-			document.getElementById('seed').remove();
-			document.getElementById('generate_map').remove();
-		}
-
-		// TODO: find why there is a error in these seeds:
-		// 7wWq8RLlFnQYGVK3ULuw
-		// LmR39CWSVRkNndjenDCx
-	</script>
 
 	<div id="controls">
 		<!-- <button id="save_map">Save</button> -->
