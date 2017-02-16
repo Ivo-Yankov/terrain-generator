@@ -2,10 +2,13 @@ var Cell = require('./ServerCell.js');
 var Grid = require('./ServerHexGrid.js');
 var seedrandom = require('seedrandom');
 
+var events = require('events');
+
 var Generator = function ( args ) {
 	min_snow_height = 150;
 
 	var grid = args.grid;
+	var res = args.res;
 
 	// Create a random seed of none is provided
 	seed = args.seed || getRandomSeed();
@@ -16,6 +19,37 @@ var Generator = function ( args ) {
 	rivers_are_generating = 0;
 	trees_are_generating = 0;
 	cover_tiles_are_generating = 0;
+
+	generate_terrain();
+
+	// Create an eventEmitter object
+	var eventEmitter = new events.EventEmitter(this);
+
+	eventEmitter.on('terrain_generated', function(evt) {
+		console.log('terrain_generated');
+		// Starts the generation of the rivers after the terrain is completed
+		generate_river_flow();
+	});
+
+	eventEmitter.on('rivers_generated', function(evt) {
+		console.log('rivers_generated');
+		// Creates trees on grass and mountain tiles
+		batch_generate( generate_tree, 'trees' );
+
+	});
+
+	eventEmitter.on('trees_generated', function(evt) {
+		console.log('trees_generated');
+		// Adds snow to the higher mountains and grass to the lower mountains
+		batch_generate( generate_cover_tile, 'covers' );
+	});
+
+	eventEmitter.on('generation_complete', function() {
+		console.log('generation_complete');
+		// Merges all geometries with the same materials into single objects
+		// This greatly improves the performance
+		getJSON();
+	});
 
 	function getRandomSeed() {
 		var seed = "";
@@ -47,14 +81,14 @@ var Generator = function ( args ) {
 				if ( height_rand_seed >= 99.95 ) {
 					height_value = Math.floor( Math.random() * 200 + 80 );
 					
-					cell.h = height_value;
+					setHeight(cell, height_value);
 					smooth_height( cell, 0, 'steep' );
 				}
 
 				// Generate a flat land island
 				else if ( height_rand_seed >= 99.90 ) {
 					height_value = Math.floor( Math.random() * 15 + 10 );
-					cell.h = height_value;
+					setHeight(cell, height_value);
 					smooth_height( cell, 0, 'flat' );
 				}
 			}
@@ -63,7 +97,7 @@ var Generator = function ( args ) {
 
 	function smooth_height( origin_cell, distance, method ) {
 		terrain_is_generating++;
-		requestAnimationFrame( function() {
+		setImmediate( function() {
 			distance++;
 			var neighbors = grid.getNeighbors(origin_cell);
 			
@@ -84,7 +118,7 @@ var Generator = function ( args ) {
 							break;
 					}
 
-					neighbors[i].h = height
+					setHeight(neighbors[i], height);
 
 					// Create a water spring
 					if ( height > 100 && Math.random() > 0.95 ) {
@@ -99,11 +133,26 @@ var Generator = function ( args ) {
 			}
 
 			if (--terrain_is_generating == 0) {
-				generate_river_flow();
+				eventEmitter.emit('terrain_generated');
 			}
 		});
 	}
 
+	function setHeight(cell, height) {
+		cell.h = height;
+		if (!cell.userData) {
+			cell.userData = {};
+		}
+		if (height > 20) {
+			cell.userData.type = 'mountain';
+		}
+		else if(height > 2) {
+			cell.userData.type = 'grass';
+		}
+		else {
+			cell.userData.type = 'mud';
+		}
+	}
 
 	function generate_river_flow() {
 		var water_springs = false;
@@ -119,13 +168,13 @@ var Generator = function ( args ) {
 		}
 
 		if ( ! water_springs ) {
-			batch_generate( generate_tree, 'trees' );
+			eventEmitter.emit('rivers_generated');
 		}
 	}
 
 	function flow_water_cell( cell ) {
 		rivers_are_generating++;
-		requestAnimationFrame( function() {
+		setImmediate( function() {
 
 
 			cell.userData.flowing = true;
@@ -148,7 +197,7 @@ var Generator = function ( args ) {
 			}
 
 			if (--rivers_are_generating == 0) {
-				batch_generate( generate_tree, 'trees' );
+				eventEmitter.emit('rivers_generated');
 			}
 		});
 	}
@@ -158,17 +207,15 @@ var Generator = function ( args ) {
 		if ( cell.userData.type == 'mountain' ) {
 
 			if ( cell.h > min_snow_height ) {
-				createSnowGeometry(cell);
 				add_feature(cell, 'snow');
 			}
 			else if ( cell.h < 50 ) {
-				createGrassGeometry(cell);
 				add_feature(cell, 'grass');
 			}
 		}
 
 		if (--cover_tiles_are_generating == 0) {
-			getJSON();
+			eventEmitter.emit('generation_complete');
 		}
 	}
 
@@ -190,7 +237,7 @@ var Generator = function ( args ) {
 				buffer.push(cell_index);
 				if ( buffer.length == buffer_size || i == grid.numCells ) {
 					( function( buffer ){
-						requestAnimationFrame( function() {
+						setImmediate( function() {
 							for ( index in buffer ) {
 								if( buffer.hasOwnProperty(index) ) {
 									generate_function( buffer[index] );
@@ -222,13 +269,11 @@ var Generator = function ( args ) {
 
 			if ( rand > tree_chance ) {
 				add_feature(cell, 'tree');
-				createTreeGeometry(cell);
 			}
 		}
 
 		if (--trees_are_generating == 0) {
-			window.dispatchEvent(new CustomEvent('trees_generated'));
-			batch_generate( generate_cover_tile, 'covers' );
+			eventEmitter.emit('trees_generated');
 		}
 	}
 
@@ -236,8 +281,8 @@ var Generator = function ( args ) {
 	function getJSON() {
 		var data = [];
 
-		for(var cell_index in board.grid.cells) {
-			var cell = board.grid.cells[cell_index];
+		for(var cell_index in grid.cells) {
+			var cell = grid.cells[cell_index];
 			ob = {
 				q: cell.q,
 				r: cell.r,
@@ -252,8 +297,7 @@ var Generator = function ( args ) {
 
 			data.push(ob);
 		}
-
-		console.log(data);
+		res.send(data);
 
 		// var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
 		// $('#downloadAnchorElem').remove();
@@ -264,6 +308,8 @@ var Generator = function ( args ) {
 		// dlAnchorElem.click();
 	}
 
+	return this;
 }
+
 
 module.exports = Generator;

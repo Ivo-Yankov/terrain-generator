@@ -114,7 +114,7 @@ TerrainGenerator = function(args) {
 			}
 		};
 
-		xmlhttp.open("GET", "sample-terrain.json", true);
+		xmlhttp.open("GET", "/generate-map", true);
 		xmlhttp.send();
 	}
 
