@@ -4,9 +4,7 @@ window.addEventListener('merging_complete', function(evt) {
 		addPlayer();
 	}
 
-	spawnResources('A', 1, {
-
-	});
+	// spawnResources('A', 1, {});
 });
 	
 window.addEventListener('click', function(evt) {
@@ -47,7 +45,6 @@ function addPlayer() {
 }
 
 function spawnResources(type, chance, spawn_restrictions) {
-	
 	grid.traverse(function(cell) {
 		var roll = Math.random() * 100;
 		// if ( spawn_restrictions )

@@ -18,7 +18,6 @@ function highlight_cell( cell, highlight_type, return_mesh ) {
 		highlight.position.z = cell.tile.position.z;
 		highlight.position.y = cell.tile.position.y + cell.h;
 		cell.userData[highlight_type] = highlight;
-
 		if ( !return_mesh ) {
 			scene.add(highlight);
 		}
