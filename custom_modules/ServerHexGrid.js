@@ -6,7 +6,6 @@ module.exports = {
 		config = config || {};
 
 		this.size = 5; // only used for generated maps
-		this.cellSize = typeof config.cellSize === 'undefined' ? 10 : config.cellSize;
 		this.cells = {};
 		this.numCells = 0;
 

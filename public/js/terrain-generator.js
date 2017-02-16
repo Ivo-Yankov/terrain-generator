@@ -5,6 +5,7 @@ TerrainGenerator = function(args) {
 	var meshes_to_combine = [];
 
 	var size = args.size || 40;
+	var grid_data = args.grid_data || [];
 
 	var tileScale = 0.95;
 
@@ -86,7 +87,7 @@ TerrainGenerator = function(args) {
 		
 		addSkyBox();
 
-		load_terrain();
+		render_terrain(grid_data);
 		
 		update();
 	};
@@ -94,28 +95,6 @@ TerrainGenerator = function(args) {
 	function update() {
 		scene.render();
 		requestAnimationFrame(update);
-	}
-
-	function load_terrain(){
-
-		var xmlhttp = new XMLHttpRequest();
-
-		xmlhttp.onreadystatechange = function() {
-			if (xmlhttp.readyState == XMLHttpRequest.DONE ) {
-				if (xmlhttp.status == 200) {
-					data = JSON.parse(xmlhttp.responseText);
-					console.log(data); 
-					render_terrain(data);
-				}
-				else {
-					console.log("error: status", xmlhttp.status);
-					console.log(xmlhttp.responseText);
-				}
-			}
-		};
-
-		xmlhttp.open("GET", "/generate-map", true);
-		xmlhttp.send();
 	}
 
 	function render_terrain(data) {
@@ -444,15 +423,6 @@ TerrainGenerator = function(args) {
 				}
 			}
 		}
-
-		// Not sure if the tiles need to be deleted
-		// for ( cell_index in grid.cells ) {
-		// 	if( grid.cells.hasOwnProperty(cell_index) ) {
-		// 		var cell = grid.cells[cell_index]; 
-		// 		cell.tile.dispose();
-		// 	}
-		// }
-
 	}
 
 	init();

@@ -30,6 +30,7 @@
     "run-sequence": "^1.0.2"
   },
   "dependencies": {
+    "body-parser": "^1.16.1",
     "express": "^4.14.1",
     "seedrandom": "^2.4.2"
   },

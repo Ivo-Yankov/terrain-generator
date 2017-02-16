@@ -48,7 +48,13 @@ var Generator = function ( args ) {
 		console.log('generation_complete');
 		// Merges all geometries with the same materials into single objects
 		// This greatly improves the performance
-		getJSON();
+		var data = getGridData();
+
+		res.send({
+			seed: seed,
+			size: grid.size,
+			grid: data
+		});
 	});
 
 	function getRandomSeed() {
@@ -277,8 +283,7 @@ var Generator = function ( args ) {
 		}
 	}
 
-	// Downloads a json with the whole grid data
-	function getJSON() {
+	function getGridData() {
 		var data = [];
 
 		for(var cell_index in grid.cells) {
@@ -297,15 +302,8 @@ var Generator = function ( args ) {
 
 			data.push(ob);
 		}
-		res.send(data);
 
-		// var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
-		// $('#downloadAnchorElem').remove();
-		// $(document).appent($('<a id="downloadAnchorElem" style="display:none"></a>'));
-		// var dlAnchorElem = document.getElementById('downloadAnchorElem');
-		// dlAnchorElem.setAttribute("href",     dataStr     );
-		// dlAnchorElem.setAttribute("download", "scene.json");
-		// dlAnchorElem.click();
+		return data;
 	}
 
 	return this;

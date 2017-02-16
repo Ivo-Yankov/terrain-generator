@@ -50,13 +50,30 @@ function mergeMeshes (meshArr) {
 };	
 
 function generate_map() {
-	generator = new TerrainGenerator({
-		size: 60,
-		seed: document.getElementById('seed').value
-	});
+	var form = document.getElementById('generate-map-form');
+	var xmlhttp = new XMLHttpRequest();
 
-	document.getElementById('seed').remove();
-	document.getElementById('generate_map').remove();
+	xmlhttp.onreadystatechange = function() {
+		if (xmlhttp.readyState == XMLHttpRequest.DONE ) {
+			if (xmlhttp.status == 200) {
+				data = JSON.parse(xmlhttp.responseText);
+				generator = new TerrainGenerator({
+					size: data.size,
+					seed: data.seed,
+					grid_data: data.grid
+				});
+			}
+			else {
+				console.log("error: status", xmlhttp.status);
+				console.log(xmlhttp.responseText);
+			}
+		}
+	};
+
+	xmlhttp.open("GET", "/generate-map?size=" + document.getElementById('size').value + "&seed=" + document.getElementById('seed').value, true);
+	xmlhttp.send();
+
+	form.remove();
 }
 
 // TODO: find why there is a error in these seeds:

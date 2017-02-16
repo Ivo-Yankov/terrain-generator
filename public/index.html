@@ -37,10 +37,12 @@
 	<script type="text/javascript" src="js/terrain-generator.js"></script>
 	<!--<script type="text/javascript" src="js/Entity.js"></script>-->
 
-	<div id="controls">
+	<div id="generate-map-form">
 		<!-- <button id="save_map">Save</button> -->
-		
-		<input id="seed" placeholder="Enter SEED here"/> <button id="generate_map" onClick="generate_map()" >Generate</button>
+
+		<input id="seed" name="seed" placeholder="Enter SEED here"/>
+		<input id="size" name="size" placeholder="60"/>
+		<button type="button" id="generate_map" onClick="generate_map()" >Generate</button>
 	</div>
 
 	
