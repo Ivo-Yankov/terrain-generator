@@ -1,6 +1,9 @@
 var express = require('express');
 var fs = require('fs');
-var app = express();
+var app = require('express')();
+var server = require('http').createServer(app);
+var io = require('socket.io')(server);
+
 var Cell = require('./custom_modules/ServerCell.js');
 var Grid = require('./custom_modules/ServerHexGrid.js');
 var Generator = require('./custom_modules/TerrainGenerator.js');
@@ -35,4 +38,18 @@ app.get('/', function (req, res) {
 
 app.use(express.static('public'));
  
-app.listen(3000);
+io.on('connection', function(socket) {
+	console.log('a user connected');
+	socket.on('disconnect', function() {
+		console.log('user disconnected');
+	});
+
+	socket.on('chat message', function(msg){
+		io.emit('chat message', {
+			msg: msg,
+			sender: socket.id
+		});
+	});
+});
+
+server.listen(3000);

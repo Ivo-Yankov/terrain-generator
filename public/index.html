@@ -28,23 +28,31 @@
 
 	<div id="view"></div>
 
+	<script type="text/javascript" src="lib/jquery-3.1.1.min.js"></script>
+	<script type="text/javascript" src="lib/socket.io-1.4.5.js"></script>
 	<script type="text/javascript" src="lib/three.min.js"></script>
 	<script type="text/javascript" src="lib/OrbitControls.js"></script>
 	<script type="text/javascript" src="dist/hex-grid.min.js"></script>
+	<script type="text/javascript" src="js/app.js"></script>
 	<script type="text/javascript" src="js/Projector.js"></script>
 	<script type="text/javascript" src="js/Helpers.js"></script>
 	<script type="text/javascript" src="js/seedrandom.js"></script>
-	<script type="text/javascript" src="js/terrain-generator.js"></script>
+	<script type="text/javascript" src="js/terrain-loader.js"></script>
 	<!--<script type="text/javascript" src="js/Entity.js"></script>-->
+
+	<link rel="stylesheet" type="text/css" href="css/main.css">
 
 	<div id="generate-map-form">
 		<!-- <button id="save_map">Save</button> -->
 
 		<input id="seed" name="seed" placeholder="Enter SEED here"/>
 		<input id="size" name="size" placeholder="60"/>
-		<button type="button" id="generate_map" onClick="generate_map()" >Generate</button>
+		<button type="button" id="generate_map" onClick="load_map()" >Generate</button>
 	</div>
 
+	<div id="chat" class="chat">
+	</div>
+	<textarea id="new_chat_message"></textarea>
 	
 </body>
 </html>

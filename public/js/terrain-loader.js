@@ -1,4 +1,4 @@
-TerrainGenerator = function(args) {
+TerrainLoader = function(args) {
 	min_snow_height = 150;
 
 	// Define global variables

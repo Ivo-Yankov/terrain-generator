@@ -48,7 +48,7 @@ function mergeMeshes (meshArr) {
     return new THREE.Mesh(geometry, material);
 };	
 
-function generate_map() {
+function load_map() {
 	var form = document.getElementById('generate-map-form');
 	var xmlhttp = new XMLHttpRequest();
 
@@ -56,7 +56,7 @@ function generate_map() {
 		if (xmlhttp.readyState == XMLHttpRequest.DONE ) {
 			if (xmlhttp.status == 200) {
 				data = JSON.parse(xmlhttp.responseText);
-				generator = new TerrainGenerator({
+				generator = new TerrainLoader({
 					size: data.size,
 					seed: data.seed,
 					grid_data: data.grid
