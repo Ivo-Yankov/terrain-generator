@@ -12,24 +12,11 @@ var url = require('url');
 
 // app.use(bodyParser.urlencoded({ extended: false })); 
 
+app.current_maps = [];
 
 var dist = 'dist';
 var src = 'src';
  
-app.get('/generate-map', function (req, res) {
-	Grid.init();	
-	var url_parts = url.parse(req.url, true);
-	var query = url_parts.query
-
-	Grid.generate({size: parseInt(query.size) || 60});
-
-	Generator({
-		grid: Grid,
-		seed: query.seed,
-		res: res
-	});
-});
-
 app.get('/', function (req, res) {
 	fs.readFile('./public/index.html', 'utf8', function(err, text) {
 		res.send(text);
@@ -40,14 +27,43 @@ app.use(express.static('public'));
  
 io.on('connection', function(socket) {
 	console.log('a user connected');
+	io.emit('refresh map list', Object.keys(app.current_maps));
+
 	socket.on('disconnect', function() {
 		console.log('user disconnected');
+		if (app.current_maps[socket.id]) {
+			delete app.current_maps[socket.id];
+			io.emit('refresh map list', Object.keys(app.current_maps));
+		}
 	});
 
-	socket.on('chat message', function(msg){
+	socket.on('get map list', function(data) {
+		io.emit('refresh map list', Object.keys(app.current_maps));
+	});
+
+	socket.on('get map', function(data) {
+		socket.emit('load map', app.current_maps[data]);
+	});
+
+	socket.on('chat message', function(data) {
 		io.emit('chat message', {
-			msg: msg,
-			sender: socket.id
+			msg: data.msg,
+			sender: data.name || socket.id
+		});
+	});
+
+	socket.on('generate map', function(data) {
+		Grid.init();
+
+		Grid.generate({size: data.size || 60});
+
+		//TODO: maybe it is not a good idea to pass all of those vars
+		Generator({
+			grid: Grid,
+			seed: data.seed,
+			socket: socket,
+			io: io,
+			app: app
 		});
 	});
 });

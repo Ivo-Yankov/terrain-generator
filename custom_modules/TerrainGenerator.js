@@ -8,7 +8,9 @@ var Generator = function ( args ) {
 	min_snow_height = 150;
 
 	var grid = args.grid;
-	var res = args.res;
+	var app = args.app;
+	var io = args.io;
+	var socket = args.socket;
 
 	// Create a random seed of none is provided
 	seed = args.seed || getRandomSeed();
@@ -50,11 +52,17 @@ var Generator = function ( args ) {
 		// This greatly improves the performance
 		var data = getGridData();
 
-		res.send({
+		var map_data = {
 			seed: seed,
 			size: grid.size,
 			grid: data
-		});
+		};
+
+		app.current_maps[socket.id] = map_data;
+
+		io.emit('refresh map list', Object.keys(app.current_maps));
+
+		socket.emit('terrain generated', map_data);
 	});
 
 	function getRandomSeed() {

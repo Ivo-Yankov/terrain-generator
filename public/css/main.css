@@ -1,9 +1,9 @@
-.chat {
+#chat {
 	height: 600px;
 	position: absolute;
 	top: 0;
 	right: 5px;
-	width: 400px;
+	width: 250px;
 	overflow-y: auto;
 	overflow-x: hidden;
 	border: 1px solid #ccc;
@@ -11,14 +11,21 @@
 	color: #fefefe;
 }
 
-#new_chat_message {
+#new_chat_message,
+#chat_name {
 	position: absolute;
 	height: 50px;
-	top: 600px;
+	top: 625px;
 	right: 6px;
-	width: 390px;
+	width: 240px;
 	padding: 0;
 	border: 5px solid #010101;
+	display: block;
+}
+
+#chat_name {
+	height: 20px;
+	top: 600px;
 }
 
 .chat-message .name {

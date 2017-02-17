@@ -38,7 +38,7 @@
 	<script type="text/javascript" src="js/Helpers.js"></script>
 	<script type="text/javascript" src="js/seedrandom.js"></script>
 	<script type="text/javascript" src="js/terrain-loader.js"></script>
-	<!--<script type="text/javascript" src="js/Entity.js"></script>-->
+	<script type="text/javascript" src="js/Entity.js"></script>
 
 	<link rel="stylesheet" type="text/css" href="css/main.css">
 
@@ -47,11 +47,14 @@
 
 		<input id="seed" name="seed" placeholder="Enter SEED here"/>
 		<input id="size" name="size" placeholder="60"/>
-		<button type="button" id="generate_map" onClick="load_map()" >Generate</button>
+		<button type="button" id="generate_map" onClick="generate_map()" >Generate</button>
+
+		<ul id="current-maps"></ul>
 	</div>
 
 	<div id="chat" class="chat">
 	</div>
+	<input id="chat_name" type="text" placeholder="Who are you?" />
 	<textarea id="new_chat_message"></textarea>
 	
 </body>

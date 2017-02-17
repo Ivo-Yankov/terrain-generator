@@ -5,35 +5,35 @@ window.addEventListener('merging_complete', function(evt) {
 	}
 
 	// spawnResources('A', 1, {});
-});
-	
-window.addEventListener('click', function(evt) {
-	if ( window.player ) {
-		clearInterval(window.player.moving_interval);
-	}
+	window.addEventListener('click', function(evt) {
+		if ( window.player ) {
+			clearInterval(window.player.moving_interval);
+		}
 
-	var mouseX = ( evt.clientX / window.innerWidth ) * 2 - 1;
-	var mouseY = -( evt.clientY / window.innerHeight ) * 2 + 1;
+		var mouseX = ( evt.clientX / window.innerWidth ) * 2 - 1;
+		var mouseY = -( evt.clientY / window.innerHeight ) * 2 + 1;
 
-	var vector = new THREE.Vector3( mouseX, mouseY, scene.camera.near );
+		var vector = new THREE.Vector3( mouseX, mouseY, scene.camera.near );
 
-	// Convert the [-1, 1] screen coordinate into a world coordinate on the near plane
-	var projector = new THREE.Projector();
-	projector.unprojectVector( vector, scene.camera );
+		// Convert the [-1, 1] screen coordinate into a world coordinate on the near plane
+		var projector = new THREE.Projector();
+		projector.unprojectVector( vector, scene.camera );
 
-	var raycaster = new THREE.Raycaster( scene.camera.position, vector.sub( scene.camera.position ).normalize() );
-	
-	var intersects = raycaster.intersectObject(merged_group, true);
-
-	if ( intersects.length ) {
-		var click_pos = intersects[0].point;
-		var cell = grid.pixelToCell(click_pos);
-		cell = grid.cells[cell.q + '.' + cell.r + '.' + cell.s];
+		var raycaster = new THREE.Raycaster( scene.camera.position, vector.sub( scene.camera.position ).normalize() );
 		
-		window.player.createPath( cell );
+		var intersects = raycaster.intersectObject(merged_group, true);
 
-	}
+		if ( intersects.length ) {
+			var click_pos = intersects[0].point;
+			var cell = grid.pixelToCell(click_pos);
+			cell = grid.cells[cell.q + '.' + cell.r + '.' + cell.s];
+			
+			window.player.createPath( cell );
+
+		}
+	});
 });
+	
 
 function addPlayer() {
 	var entity = new Entity({

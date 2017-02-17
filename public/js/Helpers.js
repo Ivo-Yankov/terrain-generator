@@ -48,32 +48,26 @@ function mergeMeshes (meshArr) {
     return new THREE.Mesh(geometry, material);
 };	
 
-function load_map() {
-	var form = document.getElementById('generate-map-form');
-	var xmlhttp = new XMLHttpRequest();
-
-	xmlhttp.onreadystatechange = function() {
-		if (xmlhttp.readyState == XMLHttpRequest.DONE ) {
-			if (xmlhttp.status == 200) {
-				data = JSON.parse(xmlhttp.responseText);
-				generator = new TerrainLoader({
-					size: data.size,
-					seed: data.seed,
-					grid_data: data.grid
-				});
-			}
-			else {
-				console.log("error: status", xmlhttp.status);
-				console.log(xmlhttp.responseText);
-			}
-		}
-	};
-
-	xmlhttp.open("GET", "/generate-map?size=" + document.getElementById('size').value + "&seed=" + document.getElementById('seed').value, true);
-	xmlhttp.send();
-
-	form.remove();
+function generate_map() {
+	window.socket.emit('generate map', {
+		size: document.getElementById('size').value,
+		seed: document.getElementById('seed').value
+	});
 }
+
+function load_map( data ) {
+	var form = document.getElementById('generate-map-form');
+	form.remove();
+
+	generator = new TerrainLoader({
+		size: data.size,
+		seed: data.seed,
+		grid_data: data.grid
+	});
+}
+
+
+
 
 // TODO: find why there is a error in these seeds:
 // 7wWq8RLlFnQYGVK3ULuw
