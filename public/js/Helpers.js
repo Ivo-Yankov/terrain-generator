@@ -66,9 +66,6 @@ function load_map( data ) {
 	});
 }
 
-
-
-
 // TODO: find why there is a error in these seeds:
 // 7wWq8RLlFnQYGVK3ULuw
 // LmR39CWSVRkNndjenDCx

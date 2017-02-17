@@ -21,6 +21,19 @@ $(function(){
 		}
 	});
 
+	socket.on('update entity', function(data) {
+		console.log("update entity!", data);
+	});
+
+	socket.on('load entities', function(entities) {
+		for (var id in entities) {
+			if (entities.hasOwnProperty(id)) {
+				//TODO not all entities are players
+				entityCollection.addPlayer(entities[id]);
+			}
+		}
+	})
+
 	$("#current-maps").on('click', 'li', function() {
 		socket.emit('get map', $(this).attr('data-map'));
 	})
@@ -35,4 +48,8 @@ $(function(){
 			return false;
 		}
 	});
+
+	window.addEventListener('merging_complete', function() {
+		socket.emit('load entities', {});
+	})
 });

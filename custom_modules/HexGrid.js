@@ -1,4 +1,4 @@
-var Cell = require('./ServerCell.js');
+var Cell = require('./Cell.js');
 
 module.exports = {
 	init : function (config) {

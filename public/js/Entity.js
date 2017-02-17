@@ -1,66 +1,5 @@
-window.addEventListener('merging_complete', function(evt) {
-	// Adds an object that is going to do stuff... I dont know what exactly yet
-	for (var i = 0; i < 1; i++) {
-		addPlayer();
-	}
-
-	// spawnResources('A', 1, {});
-	window.addEventListener('click', function(evt) {
-		if ( window.player ) {
-			clearInterval(window.player.moving_interval);
-		}
-
-		var mouseX = ( evt.clientX / window.innerWidth ) * 2 - 1;
-		var mouseY = -( evt.clientY / window.innerHeight ) * 2 + 1;
-
-		var vector = new THREE.Vector3( mouseX, mouseY, scene.camera.near );
-
-		// Convert the [-1, 1] screen coordinate into a world coordinate on the near plane
-		var projector = new THREE.Projector();
-		projector.unprojectVector( vector, scene.camera );
-
-		var raycaster = new THREE.Raycaster( scene.camera.position, vector.sub( scene.camera.position ).normalize() );
-		
-		var intersects = raycaster.intersectObject(merged_group, true);
-
-		if ( intersects.length ) {
-			var click_pos = intersects[0].point;
-			var cell = grid.pixelToCell(click_pos);
-			cell = grid.cells[cell.q + '.' + cell.r + '.' + cell.s];
-			
-			window.player.createPath( cell );
-
-		}
-	});
-});
-	
-
-function addPlayer() {
-	var entity = new Entity({
-		cell: grid.cells['0.0.0'],
-		controllable: true
-	});
-
-	window.player = entity;
-}
-
-function spawnResources(type, chance, spawn_restrictions) {
-	grid.traverse(function(cell) {
-		var roll = Math.random() * 100;
-		// if ( spawn_restrictions )
-		if ( roll <= chance ) {
-			console.log(roll);
-			new Entity( {
-				color: '#ffffff',
-				cell: cell,
-				controllable: false
-			} )
-		}
-	})
-}
-
 function Entity( args ) {
-
+	this.id = args.id;
 	this.geometry = new THREE.SphereGeometry(8, 10, 10);
 	this.material = new THREE.MeshPhongMaterial({
 		color: args.color || '#191919'
@@ -81,6 +20,7 @@ function Entity( args ) {
 }
 
 Entity.prototype = {
+	id: "",
 	moving_interval: 0,
 	path: [],
 	possible_moves: [],
@@ -129,6 +69,15 @@ Entity.prototype = {
 		board.finder.heuristicFilter = this.move_is_legal.bind(this);
 		var path = board.findPath(current_cell.tile, destination.tile, null, 10);
 		if (path) {
+			socket.emit('update entity', {
+				id: this.id,
+				position: {
+					q: destination.q,
+					r: destination.r,
+					s: destination.s
+				}
+			});
+
 			this.clear_possible_moves();
 
 			this.path = path;
@@ -252,6 +201,33 @@ Entity.prototype = {
 		}
 
 		return legal;
+	},
+
+	move_player: function (evt) {
+		if ( window.player ) {
+			clearInterval(window.player.moving_interval);
+		}
+
+		var mouseX = ( evt.clientX / window.innerWidth ) * 2 - 1;
+		var mouseY = -( evt.clientY / window.innerHeight ) * 2 + 1;
+
+		var vector = new THREE.Vector3( mouseX, mouseY, scene.camera.near );
+
+		// Convert the [-1, 1] screen coordinate into a world coordinate on the near plane
+		var projector = new THREE.Projector();
+		projector.unprojectVector( vector, scene.camera );
+
+		var raycaster = new THREE.Raycaster( scene.camera.position, vector.sub( scene.camera.position ).normalize() );
+		
+		var intersects = raycaster.intersectObject(merged_group, true);
+
+		if ( intersects.length ) {
+			var click_pos = intersects[0].point;
+			var cell = grid.pixelToCell(click_pos);
+			cell = grid.cells[cell.q + '.' + cell.r + '.' + cell.s];
+			
+			window.player.createPath( cell );
+		}
 	}
 }
 

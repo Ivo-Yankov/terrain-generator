@@ -1,5 +1,5 @@
-var Cell = require('./ServerCell.js');
-var Grid = require('./ServerHexGrid.js');
+var Cell = require('./Cell.js');
+var Grid = require('./HexGrid.js');
 var seedrandom = require('seedrandom');
 
 var events = require('events');
