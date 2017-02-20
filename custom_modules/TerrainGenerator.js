@@ -2,15 +2,10 @@ var Cell = require('./Cell.js');
 var Grid = require('./HexGrid.js');
 var seedrandom = require('seedrandom');
 
-var events = require('events');
-
 var Generator = function ( args ) {
 	min_snow_height = 150;
 
 	var grid = args.grid;
-	var app = args.app;
-	var io = args.io;
-	var socket = args.socket;
 
 	// Create a random seed of none is provided
 	seed = args.seed || getRandomSeed();
@@ -25,7 +20,7 @@ var Generator = function ( args ) {
 	generate_terrain();
 
 	// Create an eventEmitter object
-	var eventEmitter = new events.EventEmitter(this);
+	var eventEmitter = args.eventEmitter;
 
 	eventEmitter.on('terrain_generated', function(evt) {
 		console.log('terrain_generated');
@@ -44,25 +39,6 @@ var Generator = function ( args ) {
 		console.log('trees_generated');
 		// Adds snow to the higher mountains and grass to the lower mountains
 		batch_generate( generate_cover_tile, 'covers' );
-	});
-
-	eventEmitter.on('generation_complete', function() {
-		console.log('generation_complete');
-		// Merges all geometries with the same materials into single objects
-		// This greatly improves the performance
-		var data = getGridData();
-
-		var map_data = {
-			seed: seed,
-			size: grid.size,
-			grid: data
-		};
-
-		app.current_maps[socket.id] = map_data;
-
-		io.emit('refresh map list', Object.keys(app.current_maps));
-
-		socket.emit('terrain generated', map_data);
 	});
 
 	function getRandomSeed() {
@@ -229,7 +205,17 @@ var Generator = function ( args ) {
 		}
 
 		if (--cover_tiles_are_generating == 0) {
-			eventEmitter.emit('generation_complete');
+			// Merges all geometries with the same materials into single objects
+			// This greatly improves the performance
+			var data = getGridData();
+
+			var map_data = {
+				seed: seed,
+				size: grid.size,
+				grid: data
+			};
+
+			eventEmitter.emit('generation_complete', map_data);
 		}
 	}
 

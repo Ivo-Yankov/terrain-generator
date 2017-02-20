@@ -1,15 +1,12 @@
-var Cell = require('./Cell.js');
-var Grid = require('./HexGrid.js');
-var TerrainGenerator = require('./TerrainGenerator.js');
 var seedrandom = require('seedrandom');
-var events = require('events');
 
 Entity = function ( args ) {
+
+	this.eventEmitter = args.eventEmitter;
+
 	this.id = Date.now() + '' + Math.floor(Math.random()*10000);
 	this.type = args.type;
-	this.io = args.io;
-	this.socket = args.socket;
-	this.app = args.app;
+	this.belongs_to = args.belongs_to;
 
 	this.position = {
 		q: 0,
@@ -25,22 +22,21 @@ Entity.prototype.spawn = function( args ) {
 },
 
 Entity.prototype.setPosition = function( pos ) {
-	position.q = pos.q || 0;
-	position.r = pos.r || 0;
-	position.s = pos.s || 0;
+	this.position.q = pos.q || 0;
+	this.position.r = pos.r || 0;
+	this.position.s = pos.s || 0;
 },
 
 Entity.prototype.update = function( args ) {
 	if (args && args.position) {
-		setPosition(args.position);
+		this.setPosition(args.position);
 	}
 	
-	this.io.emit('update entity', this.getData());
+	this.eventEmitter.emit('update entity', this.getData());
 },
 
 Entity.prototype.delete = function() {
-	this.io.emit('delete entity', this.getData());
-	delete app.entities[id];
+	this.eventEmitter.emit('delete entity', {entity_data: this.getData(), id: id});
 },
 
 Entity.prototype.getData = function() {

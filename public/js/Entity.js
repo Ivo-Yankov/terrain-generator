@@ -52,6 +52,12 @@ Entity.prototype = {
 		}
 	},
 
+	update: function( args ) {
+		if (args.position) {
+			this.move(grid.cells[args.position.q + '.' + args.position.r + '.' + args.position.s]);
+		}
+	},
+
 	move: function( target_cell ) {
 		unhighlight_cell(target_cell, 'moving_path');
 		this.setPosition(target_cell);
@@ -70,6 +76,7 @@ Entity.prototype = {
 		var path = board.findPath(current_cell.tile, destination.tile, null, 10);
 		if (path) {
 			socket.emit('update entity', {
+				server_id: window.server_id,
 				id: this.id,
 				position: {
 					q: destination.q,

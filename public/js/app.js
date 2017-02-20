@@ -23,6 +23,10 @@ $(function(){
 
 	socket.on('update entity', function(data) {
 		console.log("update entity!", data);
+		var entity = entityCollection.getEntity(data.id);
+		if (entity) {
+			entity.update(data);
+		}
 	});
 
 	socket.on('load entities', function(entities) {
@@ -32,11 +36,12 @@ $(function(){
 				entityCollection.addPlayer(entities[id]);
 			}
 		}
-	})
+	});
 
 	$("#current-maps").on('click', 'li', function() {
-		socket.emit('get map', $(this).attr('data-map'));
-	})
+		window.server_id = $(this).attr('data-map');
+		socket.emit('get map', window.server_id);
+	});
 
 	$('#new_chat_message').on('keydown', function(e) {
 		if (e.keyCode == 13) {
@@ -50,6 +55,8 @@ $(function(){
 	});
 
 	window.addEventListener('merging_complete', function() {
-		socket.emit('load entities', {});
-	})
+		socket.emit('load entities', {server_id: window.server_id || false});
+
+		socket.emit('player joined', {server_id: window.server_id || false});
+	});
 });

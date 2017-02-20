@@ -58,6 +58,7 @@ function generate_map() {
 function load_map( data ) {
 	var form = document.getElementById('generate-map-form');
 	form.remove();
+	window.server_id = data.server_id;
 
 	generator = new TerrainLoader({
 		size: data.size,

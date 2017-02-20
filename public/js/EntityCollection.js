@@ -29,6 +29,16 @@ EntityCollection.prototype = {
 				} );
 			}
 		});
+	},
+
+	getEntity: function(id) {
+		for( i in entities ) {
+			if (entities[i].id == id) {
+				return entities[i];
+			}
+		}
+
+		return false;
 	}
 }
 
