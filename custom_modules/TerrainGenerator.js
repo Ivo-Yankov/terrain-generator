@@ -8,7 +8,7 @@ var Generator = function ( args ) {
 	var grid = args.grid;
 
 	// Create a random seed of none is provided
-	seed = args.seed || getRandomSeed();
+	seed = args.seed;
 	Math.seedrandom(seed);
 	console.log( 'Generating terrain with seed: ' + seed );
 
@@ -40,17 +40,6 @@ var Generator = function ( args ) {
 		// Adds snow to the higher mountains and grass to the lower mountains
 		batch_generate( generate_cover_tile, 'covers' );
 	});
-
-	function getRandomSeed() {
-		var seed = "";
-		var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-		for( var i=0; i < 20; i++ ) {
-			seed += possible.charAt(Math.floor(Math.random() * possible.length));
-		}
-
-		return seed;
-	}
 
 	function generate_terrain() {
 		// Set all cells to water
@@ -215,7 +204,7 @@ var Generator = function ( args ) {
 				grid: data
 			};
 
-			eventEmitter.emit('generation_complete', map_data);
+			eventEmitter.emit('map generated', map_data);
 		}
 	}
 

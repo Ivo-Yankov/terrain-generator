@@ -6,7 +6,9 @@ function Entity( args ) {
 	});
 
 	this.mesh = new THREE.Mesh(this.geometry, this.material);
-	this.setPosition(args.cell);
+	this.cell = getCell(args.cell.q, args.cell.r, args.cell.s);
+
+	this.setPosition(this.cell);
 
 	if ( args.controllable ) {
 		if ( args.moving_restrictions ) {
@@ -71,18 +73,19 @@ Entity.prototype = {
 			}
 		}
 
-
 		board.finder.heuristicFilter = this.move_is_legal.bind(this);
 		var path = board.findPath(current_cell.tile, destination.tile, null, 10);
 		if (path) {
-			socket.emit('update entity', {
+			socket.emit('entity action', {
 				server_id: window.server_id,
-				id: this.id,
-				position: {
-					q: destination.q,
-					r: destination.r,
-					s: destination.s
-				}
+				entities: [{
+					id: this.id,
+					position: {
+						q: destination.q,
+						r: destination.r,
+						s: destination.s
+					}
+				}]
 			});
 
 			this.clear_possible_moves();
@@ -108,8 +111,6 @@ Entity.prototype = {
 					}
 				}, 100);
 			})(path, this);
-
-
 		}
 	},
 

@@ -1,13 +1,73 @@
 var Entity = require('./Entity.js');
+var EventHandler = require('./EventHandler.js');
+var Grid = require('./HexGrid.js');
+var Generator = require('./TerrainGenerator.js');
+
+// args {
+//	eventEmitter,
+// 	server_id,
+// 	seed,
+// 	size,
+// 	players []
+// }
 
 GameServer = function( args ) {
-	this.map_data = args.map_data;
+	this.connections = [];
 	this.eventEmitter = args.eventEmitter;
 	this.entities = {};
+	this.server_id = args.server_id;
+	this.privateEventEmitter = EventHandler();
+	this.seed = args.seed || this.getRandomSeed();
+	var self = this;
+
+	Grid.init();
+	Grid.generate({size: args.size || 60});
+
+	this.privateEventEmitter.on('map generated', function(map_data) {
+		self.map_data = map_data;
+
+		// Add players
+		for( player_id in args.players ) {
+			if ( args.players.hasOwnProperty(player_id) ) {
+				self.addPlayer({
+					connection_id: args.players[player_id]
+				});
+			}
+		}
+
+		// TODO:
+		// self.GenerateEntities();
+
+		self.eventEmitter.emit('map generated', {
+			server_id: self.server_id,
+			socket_ids: args.players,
+			map_data: map_data,
+			entities: self.getEntitiesData(self.server_id)
+		});
+	});
+
+	Generator({
+		grid: Grid,
+		seed: this.seed,
+		eventEmitter: this.privateEventEmitter
+	});
+
 }
 
+GameServer.prototype.getRandomSeed = function() {
+	var seed = "";
+	var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+	for( var i=0; i < 20; i++ ) {
+		seed += possible.charAt(Math.floor(Math.random() * possible.length));
+	}
+
+	return seed;
+}
+
+
 GameServer.prototype.addEntity = function( args ) {
-	var belongs_to = args.server_id;
+	var belongs_to = this.server_id;
 	var player_entity = new Entity({
 		type: 'player',
 		eventEmitter: this.eventEmitter,
@@ -47,26 +107,35 @@ GameServer.prototype.getEntities = function( player_socket_id ) {
 }
 
 GameServer.prototype.addPlayer = function( args ) {
+	this.connections.push(args.connection_id);
 	console.log('adding player');
 	console.log(args);
 	var new_entity = this.addEntity({
-		server_id: args.server_id
+		server_id: args.connection_id
 	});
-}
-
-GameServer.prototype.init = function( args ) {
-	console.log('game server init');
-	console.log(args);
-	var self = this;
-	for( player_id in args.players ) {
-		if ( args.players.hasOwnProperty(player_id) ) {
-			self.addPlayer(args.players[player_id]);
-		}
-	}
 }
 
 GameServer.prototype.updateEntity = function( args ) {
 	this.entities[args.entity_id].update(args);
+}
+
+
+GameServer.prototype.getEntitiesData = function( player_id ) {
+	var entities_data = {};
+			console.log('getEntitiesData');
+
+	for (var id in this.entities) {
+		if ( this.entities.hasOwnProperty(id) ) {
+			entities_data[id] = this.entities[id].getData();
+			console.log('entity stuff');
+			console.log(player_id, entities_data[id].belongs_to, entities_data[id].type);
+			if (player_id == entities_data[id].belongs_to && entities_data[id].type == 'player') {
+				entities_data[id].controllable = true;
+			}
+		}
+	}
+
+	return entities_data;
 }
 
 module.exports = GameServer;

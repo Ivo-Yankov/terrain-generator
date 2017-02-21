@@ -49,7 +49,7 @@ function mergeMeshes (meshArr) {
 };	
 
 function generate_map() {
-	window.socket.emit('generate map', {
+	window.socket.emit('create server', {
 		size: document.getElementById('size').value,
 		seed: document.getElementById('seed').value
 	});
@@ -61,10 +61,20 @@ function load_map( data ) {
 	window.server_id = data.server_id;
 
 	generator = new TerrainLoader({
-		size: data.size,
-		seed: data.seed,
-		grid_data: data.grid
+		size: data.map_data.size,
+		seed: data.map_data.seed,
+		grid_data: data.map_data.grid
 	});
+
+	(function(entities){
+		window.addEventListener('map loaded', function(e) {
+			entityCollection.refreshEntities(entities);
+		});
+	})(data.entities);
+}
+
+function getCell(q, r, s) {
+	return board.grid.cells[ q + '.' + r + '.' + s ];
 }
 
 // TODO: find why there is a error in these seeds:

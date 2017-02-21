@@ -1,7 +1,4 @@
 var events = require('events');
-var Cell = require('./Cell.js');
-var Grid = require('./HexGrid.js');
-var Generator = require('./TerrainGenerator.js');
 var GameServer = require('./GameServer.js');
 
 SocketEventHandler = function(args) {
@@ -10,26 +7,49 @@ SocketEventHandler = function(args) {
 	var app = args.app;
 	var eventEmitter = args.eventEmitter;
 
-	io.on('connection', function(socket) {
-		console.log('a user connected');
+	function refreshMapList() {
+		io.emit('refresh map list', Object.keys(app.game_servers));		
+	}
 
-		io.emit('refresh map list', Object.keys(app.game_servers));
+	function getPlayerSocket(player_id) {
+		return io.sockets.connected[player_id];
+	}
 
-		socket.on('disconnect', function() {
-			console.log('user disconnected');
-			if (app.game_servers[socket.id]) {
-				delete app.game_servers[socket.id];
-				io.emit('refresh map list', Object.keys(app.game_servers));
+	function getSocketsByServer(server_id) {
+		var sockets = [];
+		for (var i in io.sockets.connected) {
+			if ( io.sockets.connected.hasOwnProperty(i) && io.sockets.connected[i].server_id == server_id ) {
+				sockets.push(io.sockets.connected[i]);
 			}
-		});
+		}
+		return sockets;
+	}
 
-		socket.on('get map list', function(data) {
-			io.emit('refresh map list', Object.keys(app.game_servers));
-		});
+	eventEmitter.on('map generated', function( data ) {
+		console.log('map generated');
+		// data = {
+		// 	server_id,
+		// 	socket_ids,
+		// 	map_data,
+		// 	entities,
+		// }
 
-		socket.on('get map', function(data) {
-			socket.emit('load map', app.game_servers[data].map_data);
-		});
+		// Send all to client
+		for (var i in data.socket_ids) {
+			if (data.socket_ids.hasOwnProperty(i)) {
+				var socket = getPlayerSocket(data.socket_ids[i]);
+				socket.emit('load map data', data);
+			}
+		}
+
+		// Update clients with map list
+		refreshMapList();
+	});
+
+	io.on('connection', function(socket) {
+		console.log('a user has connected');
+
+		refreshMapList();
 
 		socket.on('chat message', function(data) {
 			io.emit('chat message', {
@@ -38,75 +58,119 @@ SocketEventHandler = function(args) {
 			});
 		});
 
-		socket.on('generate map', function(data) {
-			console.log('generating map');
-			Grid.init();
-
-			Grid.generate({size: data.size || 60});
-
-			Generator({
-				grid: Grid,
-				seed: data.seed,
-				eventEmitter: eventEmitter
-			});
-		});
-
-		socket.on('update entity', function(data) {
-			console.log('update entity');
-			if ( app.game_servers[data.server_id] ) {
-				app.game_servers[data.server_id].entities[data.id].update(data);
-				console.log(data);
-				console.log(app.game_servers[data.server_id].entities[data.id].getData());
-			}
-		});
-
-		socket.on('load entities', function(data) {
-
-			var entities_data = {};
-			var server_id = data.server_id || socket.id;
+		socket.on('disconnect', function() {
+			console.log('a user has disconnected');
 			
-			for (var id in app.game_servers[server_id].entities) {
-				if ( app.game_servers[server_id].entities.hasOwnProperty(id) ) {
-					entities_data[id] = app.game_servers[server_id].entities[id].getData();
+			// If the client is connected to a host
+			if (socket.server_id) {
+
+				// Remove player from server
+				var server = app.game_servers[socket.server_id];
+				if ( server ) {
+					for (var conn in server.connections) {
+						if (server.connections[conn] == socket.id) {
+							delete server.connections[conn];
+						}
+					}
+
+					// Remove server if empty
+					if (app.game_servers[socket.server_id].connections.length == 0) {
+						console.log('deleting server');
+						delete server;
+					}
+					else {
+						// Update clients with entities
+						for (var conn in server.connections) {
+							getPlayerSocket( server.connections[conn] ).emit('update entities', server.getEntitiesData(server.connections[conn]));
+						}
+					}
 				}
+				
+				// Update clients with map list
+				refreshMapList();
 			}
-			socket.emit('load entities', entities_data);
 		});
 
-		socket.on('player joined', function(data) {
-			var server_id = data.server_id || socket.id;
-			app.game_servers[server_id].addPlayer({
-				server_id: server_id
-			});
-		});
-
-		eventEmitter.on('generation_complete', function(map_data) {
+		socket.on('create server', function(data) {
+			// Mark this socket as a host
+			socket.server_id = socket.id;
+			
+			// Init the server
 			app.game_servers[socket.id] = new GameServer({
-				map_data: map_data,
-				eventEmitter: eventEmitter
-			});
-
-			map_data.server_id = socket.id;
-
-			app.game_servers[socket.id].init({
+				eventEmitter: eventEmitter,
+				server_id: socket.id,
+				seed: data.seed,
+				size: data.size,
 				players: [socket.id]
 			});
-
-			io.emit('refresh map list', Object.keys(app.game_servers));
-
-			socket.emit('terrain generated', map_data);
 		});
 
-		eventEmitter.on('update entity', function(data) {
-			io.emit('update entity', data);
+		socket.on('join server', function(server_id) {
+			// data = {
+			// 	server_id: self.server_id,
+			// 	socket_ids: args.players,
+			// 	map_data: map_data,
+			// 	entities: self.entities 
+			// }
+
+			if (app.game_servers[server_id]) {
+
+				// Mark this socket as connected to the host
+				socket.server_id = server_id;
+
+
+				// Create entities
+				app.game_servers[server_id].addPlayer({
+					connection_id: socket.id
+				});
+				
+				// Send entities to clients
+				var sockets = getSocketsByServer(server_id);
+				for ( var i = 0; i < sockets.length; i++ ) {
+					var entities_data = app.game_servers[server_id].getEntitiesData(sockets[i].id);
+					var emit_data = {
+						entities: entities_data,
+						server_id: server_id
+					};
+
+					if (socket.id == sockets[i].id) {
+						emit_data.map_data = app.game_servers[server_id].map_data;
+						sockets[i].emit('load map data', emit_data);
+					}
+					else {
+						sockets[i].emit('player joined', emit_data);
+					}
+				}
+			}
 		});
 
-		eventEmitter.on('delete entity', function(data) {
-			io.emit('delete entity', data.entity_data);
-			delete app.game_servers[socket.id].entities[data.id];
-		});
+		socket.on('entity action', function(data) {
+			// data: {
+			// 	server_id,
+			// 	entities: {[
+			// 		id,
+			// 		position: { q, r, s }
+			// 	]}
+			// }
+
+			// Update entities
+			if ( app.game_servers[socket.server_id] ) {
+				for (var i in data.entities) {
+					if ( data.entities.hasOwnProperty(i) ) {
+						app.game_servers[data.server_id].entities[data.entities[i].id].update(data.entities[i]);
+					}
+				}
+			}
+
+			// Send entities to clients
+			var sockets = getSocketsByServer(data.server_id);
+			
+			for ( var i = 0; i < sockets.length; i++ ) {
+				var entities_data = app.game_servers[data.server_id].getEntitiesData(sockets[i].id);
+				sockets[i].emit('update entities', entities_data);
+			}
+		});		
 	});
-
 
 }
 

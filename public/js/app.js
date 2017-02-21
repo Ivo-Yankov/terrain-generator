@@ -1,46 +1,10 @@
 $(function(){
 	window.socket = io();
+	var entityCollection = new EntityCollection();
 
+	// Chat messages
 	socket.on('chat message', function(data) {
 		$('#chat').append('<div><span class="name">' + data.sender + ': </span>' + data.msg + '</div>');
-	});
-
-	socket.on('load map', function(data) {
-		load_map(data);
-	});
-	
-	socket.on('terrain generated', function(data) {
-		load_map(data);
-	});
-
-	socket.on('refresh map list', function(data) {
-		var $ul = $("#current-maps");
-		$ul.html("");
-		for (var i in data) {
-			$ul.append("<li data-map='" + data[i] + "'>" + data[i] + "</li>");
-		}
-	});
-
-	socket.on('update entity', function(data) {
-		console.log("update entity!", data);
-		var entity = entityCollection.getEntity(data.id);
-		if (entity) {
-			entity.update(data);
-		}
-	});
-
-	socket.on('load entities', function(entities) {
-		for (var id in entities) {
-			if (entities.hasOwnProperty(id)) {
-				//TODO not all entities are players
-				entityCollection.addPlayer(entities[id]);
-			}
-		}
-	});
-
-	$("#current-maps").on('click', 'li', function() {
-		window.server_id = $(this).attr('data-map');
-		socket.emit('get map', window.server_id);
 	});
 
 	$('#new_chat_message').on('keydown', function(e) {
@@ -54,9 +18,41 @@ $(function(){
 		}
 	});
 
-	window.addEventListener('merging_complete', function() {
-		socket.emit('load entities', {server_id: window.server_id || false});
+	socket.on('load map data', function(data) {
+		load_map(data);
+	});
 
-		socket.emit('player joined', {server_id: window.server_id || false});
+	window.addEventListener('load entities', function(entities){
+		entityCollection.addEntities(entities);
+	});
+	
+	socket.on('refresh map list', function(data) {
+		var $ul = $("#current-maps");
+		$ul.html("");
+		for (var i in data) {
+			$ul.append("<li data-map='" + data[i] + "'>" + data[i] + "</li>");
+		}
+	});
+
+	//TODO handle multiple entities
+	socket.on('update entities', function(entities) {
+		console.log("update entity!", entities);
+		for (var id in entities) {
+			if (entities.hasOwnProperty(id)) {
+				var entity = entityCollection.getEntity(id);
+				if (entity) {
+					entity.update(entities[id]);
+				}
+			}
+		}
+	});
+
+	$("#current-maps").on('click', 'li', function() {
+		window.server_id = $(this).attr('data-map');
+		socket.emit('join server', window.server_id);
+	});
+
+	socket.on('player joined', function(data) { 
+		entityCollection.refreshEntities(data.entities);
 	});
 });

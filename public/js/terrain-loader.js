@@ -51,8 +51,8 @@ TerrainLoader = function(args) {
 	};
 
 	function init() {
-		window.addEventListener('merging_complete', function(evt) {
-			console.log('merging_complete');
+		window.addEventListener('map loaded', function(evt) {
+			console.log('map loaded');
 			scene.add( merged_group );
 		});
 
@@ -111,10 +111,6 @@ TerrainLoader = function(args) {
 		}
 
 		mergeGeometries();
-	}
-
-	function getCell(q, r, s) {
-		return board.grid.cells[ q + '.' + r + '.' + s ];
 	}
 
 	function setFeatures(cell, features) {
@@ -415,7 +411,7 @@ TerrainLoader = function(args) {
 								console.log('merging geometry');
 								
 								if (--merging == 0) {
-									window.dispatchEvent(new CustomEvent('merging_complete'));
+									window.dispatchEvent(new CustomEvent('map loaded'));
 								}
 							})
 						})( material_meshes[mesh_type][buffer_index] );
