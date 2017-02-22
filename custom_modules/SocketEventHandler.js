@@ -69,14 +69,16 @@ SocketEventHandler = function(args) {
 				if ( server ) {
 					for (var conn in server.connections) {
 						if (server.connections[conn] == socket.id) {
-							delete server.connections[conn];
+							server.connections.splice(conn, 1);
 						}
 					}
+
+					console.log(app.game_servers[socket.server_id].connections.length);
 
 					// Remove server if empty
 					if (app.game_servers[socket.server_id].connections.length == 0) {
 						console.log('deleting server');
-						delete server;
+						delete app.game_servers[socket.server_id];
 					}
 					else {
 						// Update clients with entities
@@ -89,6 +91,8 @@ SocketEventHandler = function(args) {
 				// Update clients with map list
 				refreshMapList();
 			}
+
+
 		});
 
 		socket.on('create server', function(data) {
@@ -149,7 +153,7 @@ SocketEventHandler = function(args) {
 			// 	server_id,
 			// 	entities: {[
 			// 		id,
-			// 		position: { q, r, s }
+			// 		position: { q, r, s } || path
 			// 	]}
 			// }
 
@@ -167,8 +171,18 @@ SocketEventHandler = function(args) {
 			
 			for ( var i = 0; i < sockets.length; i++ ) {
 				var entities_data = app.game_servers[data.server_id].getEntitiesData(sockets[i].id);
+
 				sockets[i].emit('update entities', entities_data);
 			}
+
+			// Flush entities data
+			if ( app.game_servers[socket.server_id] ) {
+				for (var i in data.entities) {
+					if ( data.entities.hasOwnProperty(i) ) {
+						app.game_servers[data.server_id].entities[data.entities[i].id].flushActions();
+					}
+				}
+			}			
 		});		
 	});
 

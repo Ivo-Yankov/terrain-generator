@@ -1,6 +1,6 @@
 $(function(){
 	window.socket = io();
-	var entityCollection = new EntityCollection();
+	window.entityCollection = new EntityCollection();
 
 	// Chat messages
 	socket.on('chat message', function(data) {
@@ -22,8 +22,11 @@ $(function(){
 		load_map(data);
 	});
 
+	//TODO This event is never emitted
 	window.addEventListener('load entities', function(entities){
-		entityCollection.addEntities(entities);
+
+		//TODO this is not defined
+		window.entityCollection.addEntities(entities);
 	});
 	
 	socket.on('refresh map list', function(data) {
@@ -39,7 +42,7 @@ $(function(){
 		console.log("update entity!", entities);
 		for (var id in entities) {
 			if (entities.hasOwnProperty(id)) {
-				var entity = entityCollection.getEntity(id);
+				var entity = window.entityCollection.getEntity(id);
 				if (entity) {
 					entity.update(entities[id]);
 				}
@@ -53,6 +56,6 @@ $(function(){
 	});
 
 	socket.on('player joined', function(data) { 
-		entityCollection.refreshEntities(data.entities);
+		window.entityCollection.refreshEntities(data.entities);
 	});
 });

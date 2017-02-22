@@ -67,11 +67,10 @@ GameServer.prototype.getRandomSeed = function() {
 
 
 GameServer.prototype.addEntity = function( args ) {
-	var belongs_to = this.server_id;
 	var player_entity = new Entity({
 		type: 'player',
 		eventEmitter: this.eventEmitter,
-		belongs_to: belongs_to
+		belongs_to: args.belongs_to
 	});
 
 	this.entities[player_entity.id] = player_entity;
@@ -108,10 +107,8 @@ GameServer.prototype.getEntities = function( player_socket_id ) {
 
 GameServer.prototype.addPlayer = function( args ) {
 	this.connections.push(args.connection_id);
-	console.log('adding player');
-	console.log(args);
 	var new_entity = this.addEntity({
-		server_id: args.connection_id
+		belongs_to: args.connection_id
 	});
 }
 
@@ -122,13 +119,10 @@ GameServer.prototype.updateEntity = function( args ) {
 
 GameServer.prototype.getEntitiesData = function( player_id ) {
 	var entities_data = {};
-			console.log('getEntitiesData');
 
 	for (var id in this.entities) {
 		if ( this.entities.hasOwnProperty(id) ) {
 			entities_data[id] = this.entities[id].getData();
-			console.log('entity stuff');
-			console.log(player_id, entities_data[id].belongs_to, entities_data[id].type);
 			if (player_id == entities_data[id].belongs_to && entities_data[id].type == 'player') {
 				entities_data[id].controllable = true;
 			}

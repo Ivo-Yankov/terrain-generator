@@ -1,8 +1,6 @@
 function EntityCollection( args ) {
 	args = args || {};
-	this.entities = args.entities || [];
-
-	return this;
+	this.entities = {};
 }
 
 EntityCollection.prototype = {
@@ -14,7 +12,6 @@ EntityCollection.prototype = {
 		this.entities[entity.id] = entity;
 
 		if (args.type == 'player' && args.controllable) {
-			window.player = entity;
 			window.addEventListener('click', entity.move_player.bind(entity));
 		}
 	},
@@ -45,8 +42,8 @@ EntityCollection.prototype = {
 	refreshEntities: function(entities) {
 		for ( var i in entities ) {
 			if ( entities.hasOwnProperty(i) ) {
-				if ( this.entities[i] ) {
-					this.entities[i].update(entities[i]);
+				if ( this.getEntity(i) ) {
+					this.getEntity(i).update(entities[i]);
 				}
 				else {
 					this.addEntity(entities[i]);
@@ -57,5 +54,3 @@ EntityCollection.prototype = {
 }
 
 EntityCollection.prototype.constructor = EntityCollection;
-
-entityCollection = new EntityCollection();

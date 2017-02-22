@@ -68,13 +68,23 @@ function load_map( data ) {
 
 	(function(entities){
 		window.addEventListener('map loaded', function(e) {
-			entityCollection.refreshEntities(entities);
+			window.entityCollection.refreshEntities(entities);
 		});
 	})(data.entities);
 }
 
 function getCell(q, r, s) {
 	return board.grid.cells[ q + '.' + r + '.' + s ];
+}
+
+function compressCellData( cell ) {
+	return {
+		position: {
+			q: cell.q,
+			r: cell.r,
+			s: cell.s,
+		}
+	};
 }
 
 // TODO: find why there is a error in these seeds:

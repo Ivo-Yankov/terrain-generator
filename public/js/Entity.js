@@ -9,8 +9,9 @@ function Entity( args ) {
 	this.cell = getCell(args.cell.q, args.cell.r, args.cell.s);
 
 	this.setPosition(this.cell);
+	this.controllable = args.controllable;
 
-	if ( args.controllable ) {
+	if ( this.controllable ) {
 		if ( args.moving_restrictions ) {
 			this.moving_restrictions = vg.Tools.merge( this.moving_restrictions, args.moving_restrictions );
 		}
@@ -55,8 +56,22 @@ Entity.prototype = {
 	},
 
 	update: function( args ) {
-		if (args.position) {
-			this.move(grid.cells[args.position.q + '.' + args.position.r + '.' + args.position.s]);
+		if (args.actions) {
+			this.doActions(args.actions);
+		}
+		else if (args.position) {
+			this.clear_possible_moves();
+			// this.move(grid.cells[args.position.q + '.' + args.position.r + '.' + args.position.s]);
+		}
+	},
+
+	doActions: function( actions ) {
+		while( action = actions.pop() ) {
+			switch( action.type ) {
+				case 'move':
+					this.moveAlongPath(action.path);
+					break;
+			}
 		}
 	},
 
@@ -76,6 +91,14 @@ Entity.prototype = {
 		board.finder.heuristicFilter = this.move_is_legal.bind(this);
 		var path = board.findPath(current_cell.tile, destination.tile, null, 10);
 		if (path) {
+
+			var compressed_path = [];
+			for (var i in path) {
+				if ( path.hasOwnProperty(i) ) {
+					compressed_path.push( compressCellData(path[i]) );
+				}
+			}
+
 			socket.emit('entity action', {
 				server_id: window.server_id,
 				entities: [{
@@ -84,38 +107,51 @@ Entity.prototype = {
 						q: destination.q,
 						r: destination.r,
 						s: destination.s
-					}
+					},
+					actions: [{
+						type: 'move',
+						path: compressed_path
+					}]
 				}]
 			});
-
-			this.clear_possible_moves();
-
-			this.path = path;
-			for( var i = 0; i < path.length; i++ ) {
-				highlight_cell( path[i], 'moving_path' );
-			}
-
-			path.reverse();
-
-			( function( path, self ){			
-				window.player.moving_interval = setInterval( function() {
-					var cell = path.pop();
-					if (cell) {
-						window.player.move(cell);
-					}
-					else {
-						clearInterval(window.player.moving_interval);
-
-
-						self.find_possible_moves(self.get_current_cell(), 10);
-					}
-				}, 100);
-			})(path, this);
 		}
 	},
 
 	get_current_cell: function() {
 		return grid.cells[this.coordinates.q + '.' + this.coordinates.r + '.' + this.coordinates.s];
+	},
+
+	moveAlongPath: function(path) {
+		this.clear_possible_moves();
+
+		var decompressedPath = [];
+		for ( var i = 0; i < path.length; i++ ) {
+			decompressedPath.push(getCell(path[i].position.q, path[i].position.r, path[i].position.s));
+		}
+
+		this.path = decompressedPath;
+		for( var i = 0; i < this.path.length; i++ ) {
+			highlight_cell( this.path[i], 'moving_path' );
+		}
+
+		this.path.reverse();
+
+		( function( path, self ){			
+			self.moving_interval = setInterval( function() {
+				var cell = path.pop();
+				if (cell) {
+					self.move(cell);
+				}
+				else {
+					clearInterval(self.moving_interval);
+					self.moving_interval = 0;
+
+					if (self.controllable) {
+						self.find_possible_moves(self.get_current_cell(), 10);
+					}
+				}
+			}, 100);
+		})(this.path, this);
 	},
 
 	find_possible_moves: function( cell, maxDistance, currentDistance ) {
@@ -212,29 +248,28 @@ Entity.prototype = {
 	},
 
 	move_player: function (evt) {
-		if ( window.player ) {
-			clearInterval(window.player.moving_interval);
-		}
+		if (!this.moving_interval) {
 
-		var mouseX = ( evt.clientX / window.innerWidth ) * 2 - 1;
-		var mouseY = -( evt.clientY / window.innerHeight ) * 2 + 1;
+			var mouseX = ( evt.clientX / window.innerWidth ) * 2 - 1;
+			var mouseY = -( evt.clientY / window.innerHeight ) * 2 + 1;
 
-		var vector = new THREE.Vector3( mouseX, mouseY, scene.camera.near );
+			var vector = new THREE.Vector3( mouseX, mouseY, scene.camera.near );
 
-		// Convert the [-1, 1] screen coordinate into a world coordinate on the near plane
-		var projector = new THREE.Projector();
-		projector.unprojectVector( vector, scene.camera );
+			// Convert the [-1, 1] screen coordinate into a world coordinate on the near plane
+			var projector = new THREE.Projector();
+			projector.unprojectVector( vector, scene.camera );
 
-		var raycaster = new THREE.Raycaster( scene.camera.position, vector.sub( scene.camera.position ).normalize() );
-		
-		var intersects = raycaster.intersectObject(merged_group, true);
-
-		if ( intersects.length ) {
-			var click_pos = intersects[0].point;
-			var cell = grid.pixelToCell(click_pos);
-			cell = grid.cells[cell.q + '.' + cell.r + '.' + cell.s];
+			var raycaster = new THREE.Raycaster( scene.camera.position, vector.sub( scene.camera.position ).normalize() );
 			
-			window.player.createPath( cell );
+			var intersects = raycaster.intersectObject(merged_group, true);
+
+			if ( intersects.length ) {
+				var click_pos = intersects[0].point;
+				var cell = grid.pixelToCell(click_pos);
+				cell = grid.cells[cell.q + '.' + cell.r + '.' + cell.s];
+				
+				this.createPath( cell );
+			}
 		}
 	}
 }
