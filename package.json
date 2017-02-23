@@ -7,6 +7,12 @@
   },
   "license": "MIT",
   "devDependencies": {
+
+  },
+  "dependencies": {
+    "body-parser": "^1.16.1",
+    "express": "^4.14.1",
+    "seedrandom": "^2.4.2",
     "browser-sync": "^2.2.3",
     "del": "^2.0.2",
     "gulp": "^3.9.0",
@@ -29,11 +35,6 @@
     "gulp-wrap": "^0.11.0",
     "run-sequence": "^1.0.2"
   },
-  "dependencies": {
-    "body-parser": "^1.16.1",
-    "express": "^4.14.1",
-    "seedrandom": "^2.4.2"
-  },
   "bugs": {
     "url": "https://github.com/vonWolfehaus/hex-grid/issues"
   },
@@ -41,8 +42,7 @@
   "version": "1.0.0",
   "main": "gulpfile.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "postinstall": "gulp"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": ""
 }
