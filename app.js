@@ -9,6 +9,7 @@ var SocketHandler = require('./custom_modules/SocketEventHandler.js');
 
 var dist = 'dist';
 var src = 'src';
+var PORT = process.env.PORT || 3000;
 
 app.game_servers = {};
  
@@ -26,4 +27,4 @@ SocketHandler({
 	eventEmitter: EventHandler() 
 });
  
-server.listen(3000);
+server.listen(PORT);
