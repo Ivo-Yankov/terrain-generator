@@ -10,6 +10,7 @@ function Entity( args ) {
 
 	this.setPosition(this.cell);
 	this.controllable = args.controllable;
+	this.is_moving = false;
 
 	if ( this.controllable ) {
 		if ( args.moving_restrictions ) {
@@ -115,6 +116,9 @@ Entity.prototype = {
 				}]
 			});
 		}
+		else {
+			this.is_moving = false;
+		}
 	},
 
 	get_current_cell: function() {
@@ -136,7 +140,7 @@ Entity.prototype = {
 
 		this.path.reverse();
 
-		( function( path, self ){			
+		( function( path, self ){
 			self.moving_interval = setInterval( function() {
 				var cell = path.pop();
 				if (cell) {
@@ -161,7 +165,7 @@ Entity.prototype = {
 
 		this.drawing_possible_moves++;
 
-		(function( self, cell, currentDistance ){
+		(function( self, cell, currentDistance ) {
 			requestAnimationFrame(function() {
 
 				if ( !cell.userData.possible_moves_checked ) {
@@ -200,7 +204,13 @@ Entity.prototype = {
 			cell.userData.moving_path = null;
 		});
 
-		this.possible_moves = [];
+		for ( var cell_i in this.possible_moves ) {
+			if ( this.possible_moves.hasOwnProperty(cell_i) ) {
+				this.possible_moves[cell_i].userData.possible_move = null;
+				this.possible_moves[cell_i].userData.moving_path = null;
+			}
+		}
+
 		this.possible_moves_meshes = [];
 	},
 
@@ -211,6 +221,8 @@ Entity.prototype = {
 
 		this.merged_possible_moves = mergeMeshes(this.possible_moves_meshes);
 		scene.add(this.merged_possible_moves);
+
+		this.is_moving = false;
 	},
 
 	move_is_legal: function( current_cell, target_cell ) {
@@ -248,7 +260,8 @@ Entity.prototype = {
 	},
 
 	move_player: function (evt) {
-		if (!this.moving_interval) {
+		if (!this.is_moving) {
+			this.is_moving = true;
 
 			var mouseX = ( evt.clientX / window.innerWidth ) * 2 - 1;
 			var mouseY = -( evt.clientY / window.innerHeight ) * 2 + 1;
