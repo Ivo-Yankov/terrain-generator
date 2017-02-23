@@ -55,7 +55,15 @@ gulp.task('hex', function() {
 
 // clean up if an error goes unhandled.
 process.on('exit', function() {
-    if (node) node.kill();
+    if (node) gulp.run('default');
+});
+
+gulp.task('serveprod', function() {
+  connect.server({
+    root: '/',
+    port: process.env.PORT || 3000,
+    livereload: false
+  });
 });
 
 
