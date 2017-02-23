@@ -1,33 +1,52 @@
-#chat {
-	height: 600px;
+body { 
+	font-family: monospace;
+}
+
+.chat-container {
 	position: absolute;
 	top: 0;
-	right: 5px;
+	right: 0px;
 	width: 250px;
+	background: #010101;
+	padding: 5px;
+}
+
+#chat {
+	height: 600px;
 	overflow-y: auto;
 	overflow-x: hidden;
-	border: 1px solid #ccc;
-	background: #010101;
-	color: #fefefe;
+	font-size: 14px;
 }
 
 #new_chat_message,
 #chat_name {
-	position: absolute;
 	height: 50px;
-	top: 625px;
-	right: 6px;
-	width: 240px;
+	width: 100%;
 	padding: 0;
-	border: 5px solid #010101;
+	margin-top: 5px;
 	display: block;
+	border: 0px;
 }
 
 #chat_name {
 	height: 20px;
-	top: 600px;
+}
+
+.chat-message {
+	margin-bottom: 2px;	
+	color: snow;
 }
 
 .chat-message .name {
 	font-weight: bold;
+	color: silver;
+}
+
+#current-maps li{
+	color: blue;
+}
+
+#current-maps li:hover{
+	text-decoration: underline;
+	cursor: pointer;
 }

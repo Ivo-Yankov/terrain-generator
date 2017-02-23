@@ -50,13 +50,16 @@
 		<input id="size" name="size" placeholder="60"/>
 		<button type="button" id="generate_map" onClick="generate_map()" >Generate</button>
 
+		<h3>Server list:</h3>
 		<ul id="current-maps"></ul>
 	</div>
 
-	<div id="chat" class="chat">
+	<div class="chat-container">
+		<div id="chat" class="chat">
+		</div>
+		<input id="chat_name" type="text" placeholder="Who are you?" />
+		<textarea id="new_chat_message"></textarea>
 	</div>
-	<input id="chat_name" type="text" placeholder="Who are you?" />
-	<textarea id="new_chat_message"></textarea>
 	
 </body>
 </html>

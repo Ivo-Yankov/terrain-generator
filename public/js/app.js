@@ -4,7 +4,9 @@ $(function(){
 
 	// Chat messages
 	socket.on('chat message', function(data) {
-		$('#chat').append('<div><span class="name">' + data.sender + ': </span>' + data.msg + '</div>');
+		var $chat = $('#chat');
+		$chat.append('<div class="chat-message"><span class="name">' + data.sender + ': </span>' + data.msg + '</div>');
+		$chat.scrollTop($chat[0].scrollHeight);
 	});
 
 	$('#new_chat_message').on('keydown', function(e) {
