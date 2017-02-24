@@ -73,8 +73,6 @@ SocketEventHandler = function(args) {
 						}
 					}
 
-					console.log(app.game_servers[socket.server_id].connections.length);
-
 					// Remove server if empty
 					if (app.game_servers[socket.server_id].connections.length == 0) {
 						console.log('deleting server');

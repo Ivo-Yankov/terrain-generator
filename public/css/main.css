@@ -6,9 +6,13 @@ body {
 	position: absolute;
 	top: 0;
 	right: 0px;
-	width: 250px;
+	width: 0px;
 	background: #010101;
 	padding: 5px;
+}
+
+.chat-container.active {
+	width: 250px;
 }
 
 #chat {
@@ -49,4 +53,25 @@ body {
 #current-maps li:hover{
 	text-decoration: underline;
 	cursor: pointer;
+}
+
+.chat-toggle-button {
+	position:absolute;
+	left: -50px;
+	top: 0px;
+	width: 50px;
+	height: 30px;
+	line-height: 30px;
+	background: silver;
+	text-align: center;
+}
+
+.chat-toggle-button:after {
+	content: "<<";
+	display: inline;
+}
+
+
+.chat-container.active .chat-toggle-button:after {
+	content: ">>";
 }

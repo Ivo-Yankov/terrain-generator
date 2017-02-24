@@ -32,7 +32,6 @@ Entity.prototype.update = function( args ) {
 	console.log('updating entity');
 	if (args) {
 		if (args.position) {
-			console.log(args.position);
 			this.setPosition(args.position);
 		}
 
@@ -50,10 +49,8 @@ Entity.prototype.delete = function() {
 	this.eventEmitter.emit('delete entity', {entity_data: this.getData(), id: id});
 },
 
-Entity.prototype.getData = function( flush ) {
+Entity.prototype.getData = function() {
 	var actions = this.actions.slice(0);
-	console.log('ACTIONS:');
-	console.log(actions);
 
 	return {
 		id: this.id,

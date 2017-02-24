@@ -9,6 +9,10 @@ $(function(){
 		$chat.scrollTop($chat[0].scrollHeight);
 	});
 
+	$('.chat-toggle-button').on('click', function(e) {
+		$('.chat-container').toggleClass('active');
+	});
+
 	$('#new_chat_message').on('keydown', function(e) {
 		if (e.keyCode == 13) {
 			socket.emit('chat message', {
