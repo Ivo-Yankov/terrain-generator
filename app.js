@@ -3,8 +3,12 @@ const fs = require('fs');
 const app = require('express')();
 const server = require('http').createServer(app);
 const io = require('socket.io')(server);
-const EventHandler = require('./custom_modules/EventHandler.js');
-const SocketHandler = require('./custom_modules/SocketEventHandler.js');
+const EventHandler = require('./modules/EventHandler.js');
+
+global.app = app;
+global.io = io;
+
+const SocketHandler = require('./modules/SocketEventHandler.js');
 const PORT = process.env.PORT || 3000;
 
 app.game_servers = {};
@@ -18,9 +22,7 @@ app.get('/', (req, res) => {
 app.use(express.static('public'));
 
 SocketHandler({
-	io: io,
-	app: app,
-	eventEmitter: EventHandler() 
+	eventEmitter: EventHandler()
 });
  
 server.listen(PORT);

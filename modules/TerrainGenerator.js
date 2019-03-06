@@ -1,5 +1,3 @@
-const Cell = require('./Cell.js');
-const Grid = require('./HexGrid.js');
 const seedrandom = require('seedrandom');
 
 const Generator = function (args) {
