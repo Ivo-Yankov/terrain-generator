@@ -1,8 +1,8 @@
-var events = require('events');
+const events = require('events');
 
-EventHandler = function() {
-	var eventEmitter = new events.EventEmitter(this);
-	return eventEmitter;
-}
+EventHandler = function () {
+    let eventEmitter = new events.EventEmitter(this);
+    return eventEmitter;
+};
 
 module.exports = EventHandler;

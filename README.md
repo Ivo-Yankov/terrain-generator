@@ -14,7 +14,7 @@ Right now there are 2 types of bioms - mountain and flat island. There are river
 npm install
 ```
 ```
-gulp terrain
+node app.js
 ```
 
 For now this doesn't serve any purpose but it looks cool :)

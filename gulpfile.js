@@ -17,6 +17,7 @@ var PORT = process.env.PORT || 3000;
  * description: launch the server. If there's a server already running, kill it.
  */
 gulp.task('server', function() {
+    console.log("server");
     if (node) node.kill();
     node = spawn('node', ['app.js', PORT], {stdio: 'inherit'});
     node.on('close', function (code) {
@@ -24,6 +25,13 @@ gulp.task('server', function() {
             gulp.log('Error detected, waiting for changes...');
         }
     });
+
+	// exec('mongod --dbpath ./data', function (err, stdout, stderr) {
+	// 	console.log('starting mongo');
+	// 	console.log(stdout);
+	// 	console.log(stderr);
+	// 	cb(err);
+	// });
 });
 
 /**
@@ -31,18 +39,22 @@ gulp.task('server', function() {
  * description: start the development environment
  */
 gulp.task('default', function() {
-    gulp.run('server');
 
-    gulp.watch(['*.js', 'custom_modules/*.*', 'custom_modules/**/*.*'], function() {
-    	gulp.run('server');
-    });
+    gulp.watch('server');
 
-    gulp.watch(['public/src/**/*.*'], function() {
-        gulp.run('hex');
-    });
+    // gulp.watch(['*.js', 'custom_modules/*.*', 'custom_modules/**/*.*'], function() {
+    //     console.log("watching be");
+    //     runSequence('server');
+    // });
+	//
+    // gulp.watch(['public/src/**/*.*'], function() {
+    //     console.log("watching fe");
+    //     runSequence('hex');
+    // });
 });
 
 gulp.task('hex', function() {
+	console.log("hex");
 	gulp.src([src+'/vg.js', src+'/**/*.js', '!src/grids/Hex.js', '!src/grids/HexGrid.js'])
 		.pipe($.plumber({errorHandler: handleErrors}))
 		.pipe($.sourcemaps.init())
@@ -55,7 +67,7 @@ gulp.task('hex', function() {
 
 // clean up if an error goes unhandled.
 process.on('exit', function() {
-    if (node) gulp.run('default');
+    if (node) run('default');
 });
 
 

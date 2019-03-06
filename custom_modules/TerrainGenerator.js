@@ -1,296 +1,280 @@
-var Cell = require('./Cell.js');
-var Grid = require('./HexGrid.js');
-var seedrandom = require('seedrandom');
+const Cell = require('./Cell.js');
+const Grid = require('./HexGrid.js');
+const seedrandom = require('seedrandom');
 
-var Generator = function ( args ) {
-	min_snow_height = 150;
+const Generator = function (args) {
+    let {grid, seed, eventEmitter} = args;
+    let min_snow_height = 150,
+        terrain_is_generating = 0,
+        rivers_are_generating = 0,
+        trees_are_generating = 0,
+        cover_tiles_are_generating = 0;
 
-	var grid = args.grid;
+    // Create a random seed of none is provided
+    Math.seedrandom(seed);
 
-	// Create a random seed of none is provided
-	seed = args.seed;
-	Math.seedrandom(seed);
-	console.log( 'Generating terrain with seed: ' + seed );
+    const generate_terrain = () => {
+        // Set all cells to water
+        for (let cell_index in grid.cells) {
+            if (grid.cells.hasOwnProperty(cell_index)) {
+                let cell = grid.cells[cell_index];
+                cell.userData.type = 'water';
+            }
+        }
 
-	terrain_is_generating = 0;
-	rivers_are_generating = 0;
-	trees_are_generating = 0;
-	cover_tiles_are_generating = 0;
+        // Creates the starting tiles for the mountains and islands
+        for (let cell_index in grid.cells) {
+            if (grid.cells.hasOwnProperty(cell_index)) {
+                let cell = grid.cells[cell_index];
+                let height_rand_seed = Math.random() * 100;
 
-	generate_terrain();
+                // Generate a mountain
+                if (height_rand_seed >= 99.95) {
+                    setHeight(cell, Math.floor(Math.random() * 200 + 80));
+                    smooth_height(cell, 0, 'steep');
+                }
 
-	// Create an eventEmitter object
-	var eventEmitter = args.eventEmitter;
+                // Generate a flat land island
+                else if (height_rand_seed >= 99.90) {
+                    setHeight(cell, Math.floor(Math.random() * 15 + 10));
+                    smooth_height(cell, 0, 'flat');
+                }
+            }
+        }
+    };
 
-	eventEmitter.on('terrain_generated', function(evt) {
-		console.log('terrain_generated');
-		// Starts the generation of the rivers after the terrain is completed
-		generate_river_flow();
-	});
+    const smooth_height = (origin_cell, distance, method) => {
+        terrain_is_generating++;
+        setImmediate(() => {
+            distance++;
+            let neighbors = grid.getNeighbors(origin_cell);
 
-	eventEmitter.on('rivers_generated', function(evt) {
-		console.log('rivers_generated');
-		// Creates trees on grass and mountain tiles
-		batch_generate( generate_tree, 'trees' );
+            for (let i = 0; i < neighbors.length; i++) {
+                if (!neighbors[i].userData.smooothed_height) {
+                    neighbors[i].userData.smooothed_height = true;
+                    let origin_height = origin_cell.h,
+                        height = 0,
+                        rand_distance = 0;
 
-	});
+                    switch (method) {
+                        case 'steep':
+                            height = Math.floor(origin_height * (Math.random() * 0.35 + 0.7));
+                            rand_distance = Math.floor(Math.random() * 9) + 20;
+                            break;
+                        case 'flat':
+                            height = Math.floor(origin_height * (Math.random() * 0.2 + 0.85));
+                            rand_distance = Math.floor(Math.random() * 9) + 20;
+                            break;
+                    }
 
-	eventEmitter.on('trees_generated', function(evt) {
-		console.log('trees_generated');
-		// Adds snow to the higher mountains and grass to the lower mountains
-		batch_generate( generate_cover_tile, 'covers' );
-	});
+                    setHeight(neighbors[i], height);
 
-	function generate_terrain() {
-		// Set all cells to water
-		for ( cell_index in grid.cells ) {
-			if( grid.cells.hasOwnProperty(cell_index) ) {
-				var cell = grid.cells[cell_index];
-				cell.userData.type = 'water';
-			}
-		}
+                    // Create a water spring
+                    if (height > 100 && Math.random() > 0.95) {
+                        neighbors[i].userData.water_spring = true;
+                        neighbors[i].userData.type = 'water';
+                    }
 
-		// Creates the starting tiles for the mountains and islands
-		for ( cell_index in grid.cells ) {
-			if ( grid.cells.hasOwnProperty(cell_index) ) {
-				var cell = grid.cells[cell_index];
-				var height_rand_seed = Math.random() * 100;
+                    if (distance < rand_distance && height > 1) {
+                        smooth_height(neighbors[i], distance, method);
+                    }
+                }
+            }
 
-				// Generate a mountain
-				if ( height_rand_seed >= 99.95 ) {
-					height_value = Math.floor( Math.random() * 200 + 80 );
-					
-					setHeight(cell, height_value);
-					smooth_height( cell, 0, 'steep' );
-				}
+            if (--terrain_is_generating === 0) {
+                eventEmitter.emit('terrain_generated');
+            }
+        });
+    };
 
-				// Generate a flat land island
-				else if ( height_rand_seed >= 99.90 ) {
-					height_value = Math.floor( Math.random() * 15 + 10 );
-					setHeight(cell, height_value);
-					smooth_height( cell, 0, 'flat' );
-				}
-			}
-		}
-	}
+    const setHeight = (cell, height) => {
+        cell.h = height;
+        if (!cell.userData) {
+            cell.userData = {};
+        }
+        if (height > 20) {
+            cell.userData.type = 'mountain';
+        } else if (height > 2) {
+            cell.userData.type = 'grass';
+        } else {
+            cell.userData.type = 'mud';
+        }
+    };
 
-	function smooth_height( origin_cell, distance, method ) {
-		terrain_is_generating++;
-		setImmediate( function() {
-			distance++;
-			var neighbors = grid.getNeighbors(origin_cell);
-			
-			for (var i = 0; i < neighbors.length; i++ ) {
-				if ( !neighbors[i].userData.smooothed_height ) {
-					neighbors[i].userData.smooothed_height = true;
-					var origin_height = origin_cell.h;
-					var height = 0;
-					var rand_distance = 0;
-					switch ( method ) {
-						case 'steep': 
-							height = Math.floor( origin_height * ( Math.random() * 0.35 + 0.7 ) );
-							rand_distance = Math.floor(Math.random() * 9) + 20;
-							break;
-						case 'flat': 
-							height = Math.floor( origin_height * ( Math.random() * 0.2 + 0.85 ) );
-							rand_distance = Math.floor(Math.random() * 9) + 20;
-							break;
-					}
+    const generate_river_flow = () => {
+        let water_springs = false;
 
-					setHeight(neighbors[i], height);
+        for (let cell_index in grid.cells) {
+            if (grid.cells.hasOwnProperty(cell_index)) {
+                let cell = grid.cells[cell_index];
+                if (cell.userData.water_spring) {
+                    water_springs = true;
+                    flow_water_cell(cell);
+                }
+            }
+        }
 
-					// Create a water spring
-					if ( height > 100 && Math.random() > 0.95 ) {
-						neighbors[i].userData.water_spring = true;
-						neighbors[i].userData.type = 'water';
-					}
+        if (!water_springs) {
+            eventEmitter.emit('rivers_generated');
+        }
+    };
 
-					if ( distance < rand_distance && height > 1 ) {
-						smooth_height( neighbors[i], distance, method );
-					}
-				}
-			}
+    const flow_water_cell = (cell) => {
+        rivers_are_generating++;
+        setImmediate(() => {
+            cell.userData.flowing = true;
+            let neighbors = grid.getNeighbors(cell),
+                min_height = 1000,
+                min_height_i = false;
 
-			if (--terrain_is_generating == 0) {
-				eventEmitter.emit('terrain_generated');
-			}
-		});
-	}
+            neighbors.sort((a, b) => a.h - b.h);
 
-	function setHeight(cell, height) {
-		cell.h = height;
-		if (!cell.userData) {
-			cell.userData = {};
-		}
-		if (height > 20) {
-			cell.userData.type = 'mountain';
-		}
-		else if(height > 2) {
-			cell.userData.type = 'grass';
-		}
-		else {
-			cell.userData.type = 'mud';
-		}
-	}
+            let i = 0;
+            while (neighbors[i] && neighbors[i].userData.type === 'water') {
+                i++;
+            }
 
-	function generate_river_flow() {
-		var water_springs = false;
+            if (neighbors[i] && i < 2) {
+                neighbors[i].userData.type = 'water';
+                flow_water_cell(neighbors[i]);
+            }
 
-		for ( cell_index in grid.cells ) {
-			if ( grid.cells.hasOwnProperty(cell_index) ) {
-				var cell = grid.cells[cell_index];
-				if ( cell.userData.water_spring ) {
-					water_springs = true;
-					flow_water_cell( cell );
-				}
-			}
-		}
+            if (--rivers_are_generating === 0) {
+                eventEmitter.emit('rivers_generated');
+            }
+        });
+    };
 
-		if ( ! water_springs ) {
-			eventEmitter.emit('rivers_generated');
-		}
-	}
+    const generate_cover_tile = (cell_index) => {
+        let cell = grid.cells[cell_index];
+        if (cell.userData.type === 'mountain') {
 
-	function flow_water_cell( cell ) {
-		rivers_are_generating++;
-		setImmediate( function() {
+            if (cell.h > min_snow_height) {
+                add_feature(cell, 'snow');
+            } else if (cell.h < 50) {
+                add_feature(cell, 'grass');
+            }
+        }
 
+        if (--cover_tiles_are_generating === 0) {
+            // Merges all geometries with the same materials into single objects
+            // This greatly improves the performance
+            let data = getGridData();
 
-			cell.userData.flowing = true;
-			var neighbors = grid.getNeighbors(cell);
-			var min_height = 1000;
-			var min_height_i = false;
+            let map_data = {
+                seed: seed,
+                size: grid.size,
+                grid: data
+            };
 
-			neighbors.sort(function(a, b) { 
-			    return a.h - b.h;
-			});
+            eventEmitter.emit('map generated', map_data);
+        }
+    };
 
-			var i = 0;
-			while ( neighbors[i] && neighbors[i].userData.type === 'water' ) {
-				i++;
-			}
+    const batch_generate = (generate_function, mode) => {
+        let buffer = [],
+            buffer_size = 1000,
+            i = 0;
 
-			if ( neighbors[i] && i < 2 ) {
-				neighbors[i].userData.type = 'water';
-				flow_water_cell(neighbors[i]);
-			}
+        for (let cell_index in grid.cells) {
+            if (grid.cells.hasOwnProperty(cell_index)) {
 
-			if (--rivers_are_generating == 0) {
-				eventEmitter.emit('rivers_generated');
-			}
-		});
-	}
+                if (mode === 'trees') {
+                    trees_are_generating++;
+                } else if (mode === 'covers') {
+                    cover_tiles_are_generating++;
+                }
 
-	function generate_cover_tile( cell_index ) {
-		var cell = grid.cells[cell_index];
-		if ( cell.userData.type == 'mountain' ) {
+                i++;
+                buffer.push(cell_index);
+                if (buffer.length === buffer_size || i === grid.numCells) {
+                    (function (buffer) {
+                        setImmediate(function () {
+                            for (let index in buffer) {
+                                if (buffer.hasOwnProperty(index)) {
+                                    generate_function(buffer[index]);
+                                }
+                            }
+                        });
+                    })(buffer);
 
-			if ( cell.h > min_snow_height ) {
-				add_feature(cell, 'snow');
-			}
-			else if ( cell.h < 50 ) {
-				add_feature(cell, 'grass');
-			}
-		}
+                    buffer = [];
+                }
+            }
+        }
+    };
 
-		if (--cover_tiles_are_generating == 0) {
-			// Merges all geometries with the same materials into single objects
-			// This greatly improves the performance
-			var data = getGridData();
+    const add_feature = (cell, feature) => {
+        if (!cell.userData.features) {
+            cell.userData.features = {};
+        }
 
-			var map_data = {
-				seed: seed,
-				size: grid.size,
-				grid: data
-			};
+        cell.userData.features[feature] = true;
+    };
 
-			eventEmitter.emit('map generated', map_data);
-		}
-	}
+    const generate_tree = (cell_index) => {
+        let cell = grid.cells[cell_index];
+        if (cell.userData.type === 'grass' || cell.userData.type === 'mountain') {
+            let rand = Math.floor(Math.random() * 100);
 
-	function batch_generate( generate_function, mode ) {
-		var buffer = [];
-		var buffer_size = 1000;
-		var i = 0;
-		for ( cell_index in grid.cells ) {
-			if ( grid.cells.hasOwnProperty(cell_index) ) {
-				
-				if ( mode == 'trees' ) {
-					trees_are_generating++;
-				}
-				else if ( mode == 'covers' ) {
-					cover_tiles_are_generating++;
-				}
+            let tree_chance = cell.userData.type === 'grass' ? 80 : 95;
 
-				i++;
-				buffer.push(cell_index);
-				if ( buffer.length == buffer_size || i == grid.numCells ) {
-					( function( buffer ){
-						setImmediate( function() {
-							for ( index in buffer ) {
-								if( buffer.hasOwnProperty(index) ) {
-									generate_function( buffer[index] );
-								}
-							}
-						});
-					} )( buffer );
+            if (rand > tree_chance) {
+                add_feature(cell, 'tree');
+            }
+        }
 
-					buffer = [];
-				}
-			}
-		}
-	}
+        if (--trees_are_generating === 0) {
+            eventEmitter.emit('trees_generated');
+        }
+    };
 
-	function add_feature(cell, feature) {
-		if (!cell.userData.features) {
-			cell.userData.features = {};
-		}
+    const getGridData = () => {
+        let data = [];
 
-		cell.userData.features[feature] = true;
-	}
+        for (let cell_index in grid.cells) {
+            let cell = grid.cells[cell_index];
+            let ob = {
+                q: cell.q,
+                r: cell.r,
+                s: cell.s,
+                h: cell.h,
+                type: cell.userData.type
+            };
 
-	function generate_tree( cell_index ) {
-		var cell = grid.cells[cell_index];
-		if ( cell.userData.type == 'grass' || cell.userData.type == 'mountain' ) {
-			var rand = Math.floor( Math.random() * 100 );
+            if (cell.userData.features) {
+                ob.features = cell.userData.features;
+            }
 
-			var tree_chance = cell.userData.type == 'grass' ? 80 : 95;
+            data.push(ob);
+        }
 
-			if ( rand > tree_chance ) {
-				add_feature(cell, 'tree');
-			}
-		}
+        return data;
+    };
 
-		if (--trees_are_generating == 0) {
-			eventEmitter.emit('trees_generated');
-		}
-	}
+    console.log('Generating terrain with seed: ' + seed);
+    generate_terrain();
 
-	function getGridData() {
-		var data = [];
+    eventEmitter.on('terrain_generated', function (evt) {
+        console.log('terrain_generated');
+        // Starts the generation of the rivers after the terrain is completed
+        generate_river_flow();
+    });
 
-		for(var cell_index in grid.cells) {
-			var cell = grid.cells[cell_index];
-			ob = {
-				q: cell.q,
-				r: cell.r,
-				s: cell.s,
-				h: cell.h,
-				type: cell.userData.type
-			}
+    eventEmitter.on('rivers_generated', function (evt) {
+        console.log('rivers_generated');
+        // Creates trees on grass and mountain tiles
+        batch_generate(generate_tree, 'trees');
 
-			if (cell.userData.features) {
-				ob.features = cell.userData.features;
-			}
+    });
 
-			data.push(ob);
-		}
+    eventEmitter.on('trees_generated', function (evt) {
+        console.log('trees_generated');
+        // Adds snow to the higher mountains and grass to the lower mountains
+        batch_generate(generate_cover_tile, 'covers');
+    });
 
-		return data;
-	}
-
-	return this;
-}
-
+    return this;
+};
 
 module.exports = Generator;
