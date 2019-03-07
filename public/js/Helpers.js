@@ -2,11 +2,11 @@ function highlight_cell( cell, highlight_type, return_mesh ) {
 	if ( !cell.userData[highlight_type] ) {
 		var color, opacity;
 
-		if ( highlight_type == 'moving_path' ) {
+		if ( highlight_type === 'moving_path' ) {
 			color = 0x2660ff;
 			opacity = 0.8;
 		}
-		else if ( highlight_type == 'possible_move' ) {
+		else if ( highlight_type === 'possible_move' ) {
 			color = 0xb7caff;
 			opacity = 1;
 		}

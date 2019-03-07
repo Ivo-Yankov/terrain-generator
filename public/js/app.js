@@ -14,7 +14,7 @@ $(function(){
 	});
 
 	$('#new_chat_message').on('keydown', function(e) {
-		if (e.keyCode == 13) {
+		if (e.keyCode === 13) {
 			socket.emit('chat message', {
 				msg: $(this).val(),
 				name: $('#chat_name').val()

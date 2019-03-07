@@ -2,6 +2,7 @@ const Entity = require('./Entity.js');
 const EventHandler = require('./EventHandler.js');
 const Grid = require('./HexGrid.js');
 const Generator = require('./TerrainGenerator.js');
+const {randomBetween} = require('../helpers/MathOperations');
 
 // args {
 //	eventEmitter,
@@ -11,17 +12,23 @@ const Generator = require('./TerrainGenerator.js');
 // 	players []
 // }
 
+const defaultEntities = {
+    rock: 10,
+    coin: 100
+};
+
 GameServer = function (args) {
     this.connections = [];
     this.eventEmitter = args.eventEmitter;
     this.entities = {};
+    this.size = args.size || 60
     this.server_id = args.server_id;
     this.privateEventEmitter = EventHandler();
     this.seed = args.seed || this.getRandomSeed();
     let self = this;
 
     Grid.init();
-    Grid.generate({size: args.size || 60});
+    Grid.generate({size: this.size});
 
     this.privateEventEmitter.on('map generated', (map_data) => {
         self.map_data = map_data;
@@ -36,7 +43,7 @@ GameServer = function (args) {
         }
 
         // TODO:
-        // self.GenerateEntities();
+        self.GenerateEntities();
 
         self.eventEmitter.emit('map generated', {
             server_id: self.server_id,
@@ -58,7 +65,7 @@ GameServer.prototype.getRandomSeed = () => {
     let possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
     for (let i = 0; i < 20; i++) {
-        seed += possible.charAt(Math.floor(Math.random() * possible.length));
+        seed += possible.charAt(Math.floor(randomBetween(0, possible.length)));
     }
 
     return seed;
@@ -67,14 +74,40 @@ GameServer.prototype.getRandomSeed = () => {
 
 GameServer.prototype.addEntity = function (args) {
     let player_entity = new Entity({
-        type: 'player',
+        type: args.type,
         eventEmitter: this.eventEmitter,
-        belongs_to: args.belongs_to
+        belongs_to: args.belongs_to,
+        position: args.position
     });
 
     this.entities[player_entity.id] = player_entity;
 
     return player_entity;
+};
+
+GameServer.prototype.GenerateEntities = function (entities = {}) {
+    entities = Object.assign({}, defaultEntities, entities);
+
+    // get possible entity tiles
+    let nonWaterCells = this.map_data.grid.filter( cell => cell.type !== 'water');
+    for (let type in entities) {
+        let count = entities[type] || 0;
+        for (let i = 0; i < count; i++) {
+
+            let randCell = Math.floor(randomBetween(0, nonWaterCells.length));
+            let randPosition = {
+                q: nonWaterCells[randCell].q,
+                r: nonWaterCells[randCell].r,
+                s: nonWaterCells[randCell].s,
+            };
+
+            this.addEntity({
+                belongs_to: null,
+                type: type,
+                position: randPosition
+            })
+        }
+    }
 };
 
 GameServer.prototype.removeEntity = function (entity_id) {
@@ -106,6 +139,7 @@ GameServer.prototype.getEntities = function (player_socket_id) {
 GameServer.prototype.addPlayer = function (args) {
     this.connections.push(args.connection_id);
     let new_entity = this.addEntity({
+        type: 'player',
         belongs_to: args.connection_id
     });
 };

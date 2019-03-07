@@ -5,7 +5,7 @@ function Entity( args ) {
 		color: args.color || '#191919'
 	});
 
-	this.mesh = new THREE.Mesh(this.geometry, this.material);
+	this.mesh = createEntityMesh(args);
 	this.cell = getCell(args.cell.q, args.cell.r, args.cell.s);
 
 	this.setPosition(this.cell);
@@ -45,14 +45,19 @@ Entity.prototype = {
 	},
 
 	setPosition: function( cell ) {
-		this.mesh.position.x = cell.tile.position.x;
-		this.mesh.position.y = cell.tile.position.y + cell.h + 8;
-		this.mesh.position.z = cell.tile.position.z;
+		try {
+            this.mesh.position.x = cell.tile.position.x;
+            this.mesh.position.y = cell.tile.position.y + cell.h + 8;
+            this.mesh.position.z = cell.tile.position.z;
 
-		this.coordinates = {
-			q: cell.q,
-			r: cell.r,
-			s: cell.s,
+            this.coordinates = {
+                q: cell.q,
+                r: cell.r,
+                s: cell.s,
+            }
+        }
+        catch(e) {
+			console.error(e, cell);
 		}
 	},
 
@@ -184,7 +189,7 @@ Entity.prototype = {
 						}
 					}
 				}
-				if ( --self.drawing_possible_moves == 0 ) {
+				if ( --self.drawing_possible_moves === 0 ) {
 					self.possible_moves_ready();
 				}
 			});

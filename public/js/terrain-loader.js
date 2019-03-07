@@ -90,6 +90,8 @@ TerrainLoader = function(args) {
 		render_terrain(grid_data);
 		
 		update();
+
+        UpdateEntityAnimationFrame();
 	};
 
 	function update() {
@@ -288,7 +290,7 @@ TerrainLoader = function(args) {
 				bevelSize: 0.5,
 				bevelThickness: 0.5
 			}
-		}
+		};
 
 		var geometry = new THREE.ExtrudeGeometry(grid.cellShape, settings.extrudeSettings);
 
@@ -390,7 +392,7 @@ TerrainLoader = function(args) {
 				var mesh = meshes_to_combine[mesh_index];
 				if ( mesh.userData.type && material_meshes[mesh.userData.type] ) {
 					var buffer_index = material_meshes[mesh.userData.type].length - 1;
-					if ( material_meshes[mesh.userData.type][buffer_index].length == merge_buffer_size ) {
+					if ( material_meshes[mesh.userData.type][buffer_index].length === merge_buffer_size ) {
 						material_meshes[mesh.userData.type].push([]);
 					}
 
@@ -410,7 +412,7 @@ TerrainLoader = function(args) {
 								merged_group.add( object );
 								console.log('merging geometry');
 								
-								if (--merging == 0) {
+								if (--merging === 0) {
 									window.dispatchEvent(new CustomEvent('map loaded'));
 								}
 							})

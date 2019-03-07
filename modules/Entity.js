@@ -10,7 +10,7 @@ const Entity = function (args) {
     this.controllable = false;
     this.actions = [];
 
-    this.position = {
+    this.position = args.position || {
         q: 0,
         r: 0,
         s: 0

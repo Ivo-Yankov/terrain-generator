@@ -11,7 +11,7 @@ EntityCollection.prototype = {
 		var entity = new Entity(args);
 		this.entities[entity.id] = entity;
 
-		if (args.type == 'player' && args.controllable) {
+		if (args.type === 'player' && args.controllable) {
 			window.addEventListener('click', entity.move_player.bind(entity));
 		}
 	},
@@ -31,7 +31,7 @@ EntityCollection.prototype = {
 
 	getEntity: function(id) {
 		for( i in this.entities ) {
-			if (this.entities[i].id == id) {
+			if (this.entities[i].id === id) {
 				return this.entities[i];
 			}
 		}
@@ -51,6 +51,6 @@ EntityCollection.prototype = {
 			}
 		}
 	}
-}
+};
 
 EntityCollection.prototype.constructor = EntityCollection;

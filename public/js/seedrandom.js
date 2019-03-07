@@ -222,12 +222,12 @@ var startdenom = math.pow(width, chunks),
 //
 var impl = math['seed' + rngname] = function(seed, options, callback) {
   var key = [];
-  options = (options == true) ? { entropy: true } : (options || {});
+  options = (options === true) ? { entropy: true } : (options || {});
 
   // Flatten the seed string or build one from local entropy if needed.
   var shortseed = mixkey(flatten(
     options.entropy ? [seed, tostring(pool)] :
-    (seed == null) ? autoseed() : seed, 3), key);
+    (seed === null) ? autoseed() : seed, 3), key);
 
   // Use the seed to initialize an ARC4 generator.
   var arc4 = new ARC4(key);
@@ -262,7 +262,7 @@ var impl = math['seed' + rngname] = function(seed, options, callback) {
       x >>>= 1;                         //   we have exactly the desired bits.
     }
     return (n + x) / d;                 // Form the number within [0, 1).
-  }, shortseed, 'global' in options ? options.global : (this == math));
+  }, shortseed, 'global' in options ? options.global : (this === math));
 };
 
 //
@@ -315,12 +315,12 @@ function ARC4(key) {
 //
 function flatten(obj, depth) {
   var result = [], typ = (typeof obj), prop;
-  if (depth && typ == 'object') {
+  if (depth && typ === 'object') {
     for (prop in obj) {
       try { result.push(flatten(obj[prop], depth - 1)); } catch (e) {}
     }
   }
-  return (result.length ? result : typ == 'string' ? obj : obj + '\0');
+  return (result.length ? result : typ === 'string' ? obj : obj + '\0');
 }
 
 //
@@ -396,7 +396,7 @@ if (module && module.exports) {
   256,    // width: each RC4 output is 0 <= x < 256
   6,      // chunks: at least six RC4 outputs for each double
   52,     // digits: there are 52 significant digits in a double
-  (typeof module) == 'object' && module,    // present in node.js
-  (typeof define) == 'function' && define,  // present with an AMD loader
+  (typeof module) === 'object' && module,    // present in node.js
+  (typeof define) === 'function' && define,  // present with an AMD loader
   'random'// rngname: name for Math.random and Math.seedrandom
 );
