@@ -72,7 +72,13 @@ function UpdateEntityAnimationFrame() {
     var dTime = now - lastTime;
     lastTime = now;
     var rotationY = 0.001 * dTime;
+
     for (var i = 0; i < spinningMeshes.length; i++) {
+        if (!spinningMeshes[i].origPosY && spinningMeshes[i].origPosY !== 0) {
+            spinningMeshes[i].origPosY = spinningMeshes[i].position.y;
+        }
+
         rotateAroundWorldAxis(spinningMeshes[i], new THREE.Vector3(0,1,0), rotationY);
+        spinningMeshes[i].position.y = spinningMeshes[i].origPosY + 1.5 + Math.sin(0.002 * now) * 1.5;
     }
 }
