@@ -45,7 +45,6 @@ $(function(){
 
 	//TODO handle multiple entities
 	socket.on('update entities', function(entities) {
-		console.log("update entity!", entities);
 		for (var id in entities) {
 			if (entities.hasOwnProperty(id)) {
 				var entity = window.entityCollection.getEntity(id);

@@ -96,6 +96,7 @@ TerrainLoader = function(args) {
 
 	function update() {
 		scene.render();
+        TWEEN.update();
 		requestAnimationFrame(update);
 	}
 
@@ -144,7 +145,7 @@ TerrainLoader = function(args) {
 	function addSkyBox() {
 		var geometry = new THREE.SphereGeometry(2000, 120, 80);  
 
-		var material = new THREE.MeshPhongMaterial({
+		var material = new THREE.MeshLambertMaterial({
 			color: '#8ACCFF'
 		});
 
@@ -294,9 +295,7 @@ TerrainLoader = function(args) {
 
 		var geometry = new THREE.ExtrudeGeometry(grid.cellShape, settings.extrudeSettings);
 
-		var material = new THREE.MeshPhongMaterial({
-			color: vg.Tools.randomizeRGB('30, 30, 30', 13)
-		});
+		var material = new THREE.MeshLambertMaterial();
 
 		var tile = new THREE.Mesh( geometry, material );
 

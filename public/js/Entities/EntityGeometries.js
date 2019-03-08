@@ -13,7 +13,7 @@ function createEntityMesh(args) {
 
         case "player":
             geometry = new THREE.SphereGeometry(8, 10, 10);
-            material = new THREE.MeshPhongMaterial({color: args.color || '#191919'});
+            material = new THREE.MeshLambertMaterial({color: args.color || '#b21f21'});
             mesh = new THREE.Mesh(geometry, material);
             break;
 
